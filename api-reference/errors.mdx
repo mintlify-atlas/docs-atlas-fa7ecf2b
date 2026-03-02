@@ -1,0 +1,294 @@
+---
+title: "Errors"
+description: "Error classes and exception hierarchy"
+---
+
+The Avala SDK defines a hierarchy of exception classes to represent different API error conditions. All errors inherit from the base `AvalaError` class.
+
+## Error Hierarchy
+
+```
+AvalaError
+├── AuthenticationError (401)
+├── NotFoundError (404)
+├── RateLimitError (429)
+├── ValidationError (400/422)
+└── ServerError (5xx)
+```
+
+---
+
+## AvalaError
+
+Base exception class for all Avala API errors.
+
+### Attributes
+
+<ParamField path="message" type="str">
+  Human-readable error message
+</ParamField>
+
+<ParamField path="status_code" type="int | None">
+  HTTP status code from the response, if available
+</ParamField>
+
+<ParamField path="body" type="Any">
+  Raw response body from the API, if available
+</ParamField>
+
+### Usage
+
+```python
+from avala import Avala, AvalaError
+
+client = Avala(api_key="your-api-key")
+
+try:
+    dataset = client.datasets.get(owner="user", slug="dataset")
+except AvalaError as e:
+    print(f"Error: {e.message}")
+    print(f"Status code: {e.status_code}")
+    print(f"Response body: {e.body}")
+```
+
+---
+
+## AuthenticationError
+
+Raised when authentication fails (HTTP 401).
+
+### When Raised
+
+- Invalid or missing API key
+- Expired authentication token
+- Insufficient permissions for the requested resource
+
+### Usage
+
+```python
+from avala import Avala, AuthenticationError
+
+client = Avala(api_key="invalid-key")
+
+try:
+    datasets = client.datasets.list(owner="username")
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+    # Re-authenticate or check API key
+```
+
+---
+
+## NotFoundError
+
+Raised when a requested resource does not exist (HTTP 404).
+
+### When Raised
+
+- Dataset, project, or export not found
+- Invalid owner or slug
+- Resource has been deleted
+
+### Usage
+
+```python
+from avala import Avala, NotFoundError
+
+client = Avala(api_key="your-api-key")
+
+try:
+    dataset = client.datasets.get(
+        owner="username",
+        slug="nonexistent-dataset"
+    )
+except NotFoundError as e:
+    print(f"Resource not found: {e.message}")
+    # Handle missing resource
+```
+
+---
+
+## RateLimitError
+
+Raised when the API rate limit is exceeded (HTTP 429).
+
+### Attributes
+
+Inherits all attributes from `AvalaError`, plus:
+
+<ParamField path="retry_after" type="float | None">
+  Number of seconds to wait before retrying, if provided by the API
+</ParamField>
+
+### When Raised
+
+- Too many requests in a short time period
+- Account-level or endpoint-level rate limits exceeded
+
+### Usage
+
+```python
+import time
+from avala import Avala, RateLimitError
+
+client = Avala(api_key="your-api-key")
+
+try:
+    for i in range(1000):
+        client.datasets.list(owner="username")
+except RateLimitError as e:
+    print(f"Rate limit exceeded: {e.message}")
+    if e.retry_after:
+        print(f"Retry after {e.retry_after} seconds")
+        time.sleep(e.retry_after)
+        # Retry the request
+```
+
+<Note>
+Implement exponential backoff when handling rate limit errors for production applications.
+</Note>
+
+---
+
+## ValidationError
+
+Raised when request validation fails (HTTP 400 or 422).
+
+### Attributes
+
+Inherits all attributes from `AvalaError`, plus:
+
+<ParamField path="details" type="list[Any]">
+  List of detailed validation error objects, if provided by the API
+</ParamField>
+
+### When Raised
+
+- Missing required parameters
+- Invalid parameter types or values
+- Malformed request body
+- Business logic validation failures
+
+### Usage
+
+```python
+from avala import Avala, ValidationError
+
+client = Avala(api_key="your-api-key")
+
+try:
+    dataset = client.datasets.create(
+        name="",  # Empty name - invalid
+        visibility="invalid-value",
+        owner="username"
+    )
+except ValidationError as e:
+    print(f"Validation failed: {e.message}")
+    print(f"Status code: {e.status_code}")
+    if e.details:
+        print("Validation errors:")
+        for detail in e.details:
+            print(f"  - {detail}")
+```
+
+---
+
+## ServerError
+
+Raised when the server encounters an internal error (HTTP 5xx).
+
+### When Raised
+
+- Internal server errors (500)
+- Service unavailable (503)
+- Gateway timeout (504)
+- Other server-side failures
+
+### Usage
+
+```python
+from avala import Avala, ServerError
+import time
+
+client = Avala(api_key="your-api-key")
+
+max_retries = 3
+for attempt in range(max_retries):
+    try:
+        dataset = client.datasets.get(
+            owner="username",
+            slug="my-dataset"
+        )
+        break
+    except ServerError as e:
+        print(f"Server error (attempt {attempt + 1}): {e.message}")
+        if attempt < max_retries - 1:
+            time.sleep(2 ** attempt)  # Exponential backoff
+        else:
+            raise
+```
+
+<Note>
+Server errors are typically transient. Implement retry logic with exponential backoff for better resilience.
+</Note>
+
+---
+
+## Error Handling Best Practices
+
+### Catch Specific Exceptions
+
+```python
+from avala import (
+    Avala,
+    AuthenticationError,
+    NotFoundError,
+    RateLimitError,
+    ValidationError,
+    ServerError,
+    AvalaError
+)
+
+client = Avala(api_key="your-api-key")
+
+try:
+    dataset = client.datasets.get(owner="user", slug="dataset")
+except AuthenticationError:
+    # Handle auth issues
+    pass
+except NotFoundError:
+    # Handle missing resources
+    pass
+except RateLimitError as e:
+    # Handle rate limiting with retry
+    if e.retry_after:
+        time.sleep(e.retry_after)
+except ValidationError as e:
+    # Handle validation errors
+    for detail in e.details:
+        print(detail)
+except ServerError:
+    # Handle server errors with retry
+    pass
+except AvalaError as e:
+    # Catch-all for any other Avala errors
+    print(f"Unexpected error: {e.message}")
+```
+
+### Async Error Handling
+
+```python
+from avala import AsyncAvala, AvalaError
+
+async def fetch_dataset():
+    async with AsyncAvala(api_key="your-api-key") as client:
+        try:
+            dataset = await client.datasets.get(
+                owner="username",
+                slug="my-dataset"
+            )
+            return dataset
+        except AvalaError as e:
+            print(f"Error fetching dataset: {e.message}")
+            raise
+```

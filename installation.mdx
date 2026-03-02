@@ -1,0 +1,144 @@
+---
+title: Installation
+description: Install the Avala Python SDK using pip, Poetry, or uv
+---
+
+The Avala SDK is published to PyPI as `avala` and can be installed with any Python package manager.
+
+## Requirements
+
+<Note>
+  The Avala SDK requires **Python 3.9 or higher**. Check your version with `python --version`.
+</Note>
+
+Core dependencies:
+- `httpx>=0.24,<1` - HTTP client for API requests
+- `pydantic>=2.0,<3` - Data validation and type safety
+
+## Install with pip
+
+<CodeGroup>
+```bash pip
+pip install avala
+```
+
+```bash Poetry
+poetry add avala
+```
+
+```bash uv
+uv add avala
+```
+</CodeGroup>
+
+## Install with CLI support
+
+The SDK includes an optional command-line interface for quick operations. Install with the `cli` extra:
+
+<CodeGroup>
+```bash pip
+pip install avala[cli]
+```
+
+```bash Poetry
+poetry add avala[cli]
+```
+
+```bash uv
+uv add avala[cli]
+```
+</CodeGroup>
+
+This adds:
+- `click>=8.0` - CLI framework
+- `rich>=13.0` - Rich terminal output
+
+<Tip>
+  The CLI is great for exploring your datasets and creating exports without writing code. Try `avala --help` after installation.
+</Tip>
+
+## Development installation
+
+If you're contributing to the SDK or need the development dependencies:
+
+<CodeGroup>
+```bash pip
+pip install avala[dev]
+```
+
+```bash Poetry
+poetry add avala[dev]
+```
+
+```bash uv
+uv add avala[dev]
+```
+</CodeGroup>
+
+Development extras include:
+- `pytest>=7` - Test framework
+- `respx>=0.20` - HTTPX mocking for tests
+- `mypy>=1` - Static type checker
+- `ruff>=0.1` - Fast Python linter and formatter
+- `pytest-asyncio>=0.21` - Async test support
+
+## Verify installation
+
+Check that the SDK is installed correctly:
+
+```python
+import avala
+print(avala.__version__)  # Should print the installed version
+```
+
+If you installed the CLI extra:
+
+```bash
+avala --version
+```
+
+## Virtual environments
+
+<Warning>
+  Always install the SDK in a virtual environment to avoid conflicts with system packages.
+</Warning>
+
+<CodeGroup>
+```bash venv
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install avala
+```
+
+```bash Poetry (automatic)
+poetry add avala  # Poetry creates and manages the venv automatically
+```
+
+```bash uv (automatic)
+uv add avala  # uv creates and manages the venv automatically
+```
+</CodeGroup>
+
+## Upgrade to the latest version
+
+Keep your SDK up to date to access new features and bug fixes:
+
+<CodeGroup>
+```bash pip
+pip install --upgrade avala
+```
+
+```bash Poetry
+poetry update avala
+```
+
+```bash uv
+uv update avala
+```
+</CodeGroup>
+
+## Next steps
+
+<Card title="Authentication" icon="key" href="/authentication">
+  Configure your API key to start making requests
+</Card>

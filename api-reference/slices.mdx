@@ -1,0 +1,205 @@
+---
+title: "Slices"
+description: "Manage data slices and slice items"
+---
+
+## client.slices.list()
+
+List all slices for a given owner.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField query="limit" type="int">
+  Maximum number of slices to return
+</ParamField>
+
+<ParamField query="cursor" type="str">
+  Pagination cursor from a previous response
+</ParamField>
+
+<ResponseField name="data" type="CursorPage[Slice]">
+  Paginated list of slices
+</ResponseField>
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+slices = client.slices.list(owner="username")
+for slice in slices:
+    print(slice.name)
+```
+
+---
+
+## client.slices.get()
+
+Retrieve a specific slice by owner and slug.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  Slice identifier slug
+</ParamField>
+
+<ResponseField name="response" type="Slice">
+  The requested slice object
+</ResponseField>
+
+```python
+slice = client.slices.get(
+    owner="username",
+    slug="my-slice"
+)
+print(slice.name)
+```
+
+---
+
+## client.slices.create()
+
+Create a new slice.
+
+<ParamField body="name" type="str" required>
+  Name of the slice
+</ParamField>
+
+<ParamField body="visibility" type="str" required>
+  Visibility setting (e.g., "public", "private")
+</ParamField>
+
+<ParamField body="sub_slices" type="List[Dict[str, Any]]" required>
+  List of sub-slice configurations
+</ParamField>
+
+<ParamField body="organization" type="str">
+  Organization slug to create the slice under
+</ParamField>
+
+<ParamField body="random_selection_count" type="int">
+  Number of items to randomly select from the slice
+</ParamField>
+
+<ResponseField name="response" type="Slice">
+  The newly created slice object
+</ResponseField>
+
+```python
+slice = client.slices.create(
+    name="Training Set",
+    visibility="private",
+    sub_slices=[
+        {
+            "dataset": "username/dataset-slug",
+            "filters": {"split": "train"}
+        }
+    ],
+    organization="my-org"
+)
+```
+
+---
+
+## client.slices.list_items()
+
+List all items in a specific slice.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  Slice identifier slug
+</ParamField>
+
+<ParamField query="limit" type="int">
+  Maximum number of items to return
+</ParamField>
+
+<ParamField query="cursor" type="str">
+  Pagination cursor from a previous response
+</ParamField>
+
+<ResponseField name="data" type="CursorPage[SliceItem]">
+  Paginated list of slice items
+</ResponseField>
+
+```python
+items = client.slices.list_items(
+    owner="username",
+    slug="my-slice"
+)
+for item in items:
+    print(item.uid)
+```
+
+---
+
+## client.slices.get_item()
+
+Retrieve a specific item from a slice.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  Slice identifier slug
+</ParamField>
+
+<ParamField path="item_uid" type="str" required>
+  Unique identifier of the slice item
+</ParamField>
+
+<ResponseField name="response" type="SliceItem">
+  The requested slice item object
+</ResponseField>
+
+```python
+item = client.slices.get_item(
+    owner="username",
+    slug="my-slice",
+    item_uid="item-123"
+)
+print(item.uid)
+```
+
+---
+
+## Async Methods
+
+All methods are available in async form via `client.slices` when using `AsyncAvala`:
+
+```python
+from avala import AsyncAvala
+
+async with AsyncAvala(api_key="your-api-key") as client:
+    slices = await client.slices.list(owner="username")
+    
+    slice = await client.slices.get(
+        owner="username",
+        slug="my-slice"
+    )
+    
+    new_slice = await client.slices.create(
+        name="Training Set",
+        visibility="private",
+        sub_slices=[...]
+    )
+    
+    items = await client.slices.list_items(
+        owner="username",
+        slug="my-slice"
+    )
+    
+    item = await client.slices.get_item(
+        owner="username",
+        slug="my-slice",
+        item_uid="item-123"
+    )
+```

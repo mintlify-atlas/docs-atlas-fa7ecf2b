@@ -1,0 +1,200 @@
+---
+title: Consensus
+description: Measure and analyze annotator agreement in labeling projects
+---
+
+Consensus tools help you measure inter-annotator agreement and identify areas where labelers disagree, enabling you to improve label quality and identify ambiguous data.
+
+## Methods
+
+### get_summary
+
+Get a summary of consensus metrics for a project.
+
+```python
+client.consensus.get_summary(project_uid="proj_123")
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ResponseField name="project_uid" type="str">
+  UID of the project
+</ResponseField>
+
+<ResponseField name="overall_agreement" type="float">
+  Overall agreement score across all tasks (0.0 to 1.0)
+</ResponseField>
+
+<ResponseField name="tasks_analyzed" type="int">
+  Number of tasks included in consensus analysis
+</ResponseField>
+
+<ResponseField name="annotators_count" type="int">
+  Number of annotators contributing to the project
+</ResponseField>
+
+<ResponseField name="avg_annotations_per_task" type="float">
+  Average number of annotations per task
+</ResponseField>
+
+<ResponseField name="low_consensus_tasks" type="int">
+  Number of tasks with low annotator agreement
+</ResponseField>
+
+### list_scores
+
+List consensus scores for individual tasks.
+
+```python
+client.consensus.list_scores(
+    project_uid="proj_123",
+    limit=100,
+    cursor="next_page_token"
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of scores to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="list[ConsensusScore]">
+  List of consensus score objects
+</ResponseField>
+
+<ResponseField name="data[].task_uid" type="str">
+  UID of the task
+</ResponseField>
+
+<ResponseField name="data[].consensus_score" type="float">
+  Agreement score for this task (0.0 to 1.0)
+</ResponseField>
+
+<ResponseField name="data[].annotation_count" type="int">
+  Number of annotations for this task
+</ResponseField>
+
+<ResponseField name="data[].annotator_count" type="int">
+  Number of unique annotators
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str">
+  Cursor for the next page of results
+</ResponseField>
+
+### compute
+
+Compute consensus scores for a project.
+
+```python
+client.consensus.compute(project_uid="proj_123")
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project to compute consensus for
+</ParamField>
+
+<ResponseField name="status" type="str">
+  Status of the computation (e.g., "completed", "in_progress")
+</ResponseField>
+
+<ResponseField name="tasks_processed" type="int">
+  Number of tasks processed
+</ResponseField>
+
+<ResponseField name="computation_time" type="float">
+  Time taken to compute consensus (in seconds)
+</ResponseField>
+
+<ResponseField name="overall_agreement" type="float">
+  Overall agreement score
+</ResponseField>
+
+### get_config
+
+Get consensus configuration for a project.
+
+```python
+client.consensus.get_config(project_uid="proj_123")
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ResponseField name="iou_threshold" type="float">
+  Intersection-over-union threshold for bounding box agreement (0.0 to 1.0)
+</ResponseField>
+
+<ResponseField name="min_agreement_ratio" type="float">
+  Minimum agreement ratio to consider consensus achieved (0.0 to 1.0)
+</ResponseField>
+
+<ResponseField name="min_annotations" type="int">
+  Minimum number of annotations required per task for consensus calculation
+</ResponseField>
+
+### update_config
+
+Update consensus configuration for a project.
+
+```python
+client.consensus.update_config(
+    project_uid="proj_123",
+    iou_threshold=0.5,
+    min_agreement_ratio=0.7,
+    min_annotations=3
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="iou_threshold" type="float" optional>
+  Intersection-over-union threshold for bounding box agreement (0.0 to 1.0). Higher values require stricter overlap.
+</ParamField>
+
+<ParamField path="min_agreement_ratio" type="float" optional>
+  Minimum agreement ratio to consider consensus achieved (0.0 to 1.0)
+</ParamField>
+
+<ParamField path="min_annotations" type="int" optional>
+  Minimum number of annotations required per task for consensus calculation
+</ParamField>
+
+<ResponseField name="iou_threshold" type="float">
+  Updated IoU threshold
+</ResponseField>
+
+<ResponseField name="min_agreement_ratio" type="float">
+  Updated minimum agreement ratio
+</ResponseField>
+
+<ResponseField name="min_annotations" type="int">
+  Updated minimum annotations requirement
+</ResponseField>
+
+## Async Methods
+
+All methods are available in async form through `AsyncAvala`:
+
+```python
+await client.consensus.get_summary(project_uid="proj_123")
+await client.consensus.list_scores(project_uid="proj_123")
+await client.consensus.compute(project_uid="proj_123")
+await client.consensus.get_config(project_uid="proj_123")
+await client.consensus.update_config(
+    project_uid="proj_123",
+    iou_threshold=0.5
+)
+```

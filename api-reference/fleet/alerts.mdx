@@ -1,0 +1,299 @@
+---
+title: Fleet Alerts
+description: Manage alerts triggered by fleet monitoring rules
+---
+
+The Alerts resource allows you to view and manage alerts that are automatically triggered when your fleet monitoring rules detect conditions requiring attention.
+
+## Methods
+
+### list
+
+Query alerts with flexible filtering options.
+
+```python
+alerts = client.fleet.alerts.list(
+    status="open",
+    severity="critical",
+    device_id="dev_abc123",
+    rule_id="rule_xyz789",
+    limit=50,
+    cursor=None
+)
+```
+
+#### Parameters
+
+<ParamField path="status" type="string" optional>
+  Filter alerts by status (e.g., "open", "acknowledged", "resolved")
+</ParamField>
+
+<ParamField path="severity" type="string" optional>
+  Filter alerts by severity level (e.g., "low", "medium", "high", "critical")
+</ParamField>
+
+<ParamField path="device_id" type="string" optional>
+  Filter alerts by device ID
+</ParamField>
+
+<ParamField path="rule_id" type="string" optional>
+  Filter alerts by the rule that triggered them
+</ParamField>
+
+<ParamField path="limit" type="integer" optional>
+  Maximum number of alerts to return per page
+</ParamField>
+
+<ParamField path="cursor" type="string" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="list[Alert]">
+  List of alert objects
+  
+  <ResponseField name="uid" type="string">
+    Unique alert identifier
+  </ResponseField>
+  
+  <ResponseField name="rule" type="string">
+    ID of the rule that triggered this alert
+  </ResponseField>
+  
+  <ResponseField name="device" type="string">
+    Device ID associated with this alert
+  </ResponseField>
+  
+  <ResponseField name="recording" type="string">
+    Recording ID associated with this alert
+  </ResponseField>
+  
+  <ResponseField name="severity" type="string">
+    Alert severity level
+  </ResponseField>
+  
+  <ResponseField name="status" type="string">
+    Current alert status ("open", "acknowledged", "resolved")
+  </ResponseField>
+  
+  <ResponseField name="message" type="string">
+    Alert message describing the condition
+  </ResponseField>
+  
+  <ResponseField name="triggered_at" type="datetime">
+    When the alert was triggered
+  </ResponseField>
+  
+  <ResponseField name="acknowledged_at" type="datetime">
+    When the alert was acknowledged
+  </ResponseField>
+  
+  <ResponseField name="acknowledged_by" type="string">
+    User who acknowledged the alert
+  </ResponseField>
+  
+  <ResponseField name="resolved_at" type="datetime">
+    When the alert was resolved
+  </ResponseField>
+  
+  <ResponseField name="resolution_note" type="string">
+    Note explaining how the alert was resolved
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="datetime">
+    Alert creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="datetime">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results are available
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for fetching the next page
+</ResponseField>
+
+---
+
+### get
+
+Retrieve details for a specific alert.
+
+```python
+alert = client.fleet.alerts.get("alert_def456")
+```
+
+#### Parameters
+
+<ParamField path="alert_id" type="string" required>
+  The unique identifier of the alert
+</ParamField>
+
+#### Returns
+
+Returns an `Alert` object.
+
+---
+
+### acknowledge
+
+Acknowledge an alert to indicate that it has been seen and is being addressed.
+
+```python
+alert = client.fleet.alerts.acknowledge("alert_def456")
+```
+
+#### Parameters
+
+<ParamField path="alert_id" type="string" required>
+  The unique identifier of the alert to acknowledge
+</ParamField>
+
+#### Returns
+
+Returns the updated `Alert` object with `status` set to "acknowledged" and `acknowledged_at` timestamp populated.
+
+---
+
+### resolve
+
+Resolve an alert to indicate that the underlying issue has been addressed.
+
+```python
+alert = client.fleet.alerts.resolve(
+    "alert_def456",
+    resolution_note="Temperature normalized after cooling system restart"
+)
+```
+
+#### Parameters
+
+<ParamField path="alert_id" type="string" required>
+  The unique identifier of the alert to resolve
+</ParamField>
+
+<ParamField path="resolution_note" type="string" optional>
+  Note explaining how the alert was resolved or what action was taken
+</ParamField>
+
+#### Returns
+
+Returns the updated `Alert` object with `status` set to "resolved", `resolved_at` timestamp populated, and `resolution_note` included if provided.
+
+## Example Usage
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all open critical alerts
+critical_alerts = client.fleet.alerts.list(
+    status="open",
+    severity="critical"
+)
+
+print(f"Found {len(critical_alerts.data)} critical alerts")
+
+for alert in critical_alerts.data:
+    print(f"Alert {alert.uid}: {alert.message}")
+    print(f"  Device: {alert.device}")
+    print(f"  Triggered at: {alert.triggered_at}")
+    print(f"  Severity: {alert.severity}")
+
+# Acknowledge an alert
+if critical_alerts.data:
+    first_alert = critical_alerts.data[0]
+    acknowledged = client.fleet.alerts.acknowledge(first_alert.uid)
+    print(f"Alert acknowledged at {acknowledged.acknowledged_at}")
+
+# Resolve an alert with a note
+resolved = client.fleet.alerts.resolve(
+    first_alert.uid,
+    resolution_note="Issue resolved by deploying firmware update v2.3.1"
+)
+print(f"Alert resolved at {resolved.resolved_at}")
+print(f"Resolution: {resolved.resolution_note}")
+
+# List alerts for a specific device
+device_alerts = client.fleet.alerts.list(device_id="dev_abc123")
+
+for alert in device_alerts.data:
+    status_symbol = {
+        "open": "🔴",
+        "acknowledged": "🟡",
+        "resolved": "🟢"
+    }.get(alert.status, "⚪")
+    print(f"{status_symbol} {alert.message}")
+
+# Get detailed information about a specific alert
+alert_detail = client.fleet.alerts.get("alert_def456")
+print(f"Alert from rule: {alert_detail.rule}")
+print(f"Status: {alert_detail.status}")
+if alert_detail.resolution_note:
+    print(f"Resolution: {alert_detail.resolution_note}")
+```
+
+## Async Usage
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def manage_alerts():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # List alerts
+    alerts = await client.fleet.alerts.list(status="open")
+    
+    # Acknowledge alerts in parallel
+    tasks = [
+        client.fleet.alerts.acknowledge(alert.uid)
+        for alert in alerts.data
+    ]
+    acknowledged = await asyncio.gather(*tasks)
+    
+    print(f"Acknowledged {len(acknowledged)} alerts")
+    
+    # Resolve an alert
+    resolved = await client.fleet.alerts.resolve(
+        alerts.data[0].uid,
+        resolution_note="Automated resolution"
+    )
+    
+asyncio.run(manage_alerts())
+```
+
+## Alert Workflow
+
+Alerts typically follow this lifecycle:
+
+1. **Open**: Alert is triggered by a rule and requires attention
+2. **Acknowledged**: Someone has seen the alert and is investigating
+3. **Resolved**: The underlying issue has been addressed
+
+```python
+# Typical workflow for handling an alert
+alert = client.fleet.alerts.get("alert_123")
+
+if alert.status == "open":
+    # Acknowledge that you're working on it
+    alert = client.fleet.alerts.acknowledge(alert.uid)
+    
+    # ... perform investigation and remediation ...
+    
+    # Resolve with details
+    alert = client.fleet.alerts.resolve(
+        alert.uid,
+        resolution_note="Root cause identified and fixed"
+    )
+```
+
+## Alert Channels
+
+Alerts can be delivered through various channels including email, webhooks, Slack, PagerDuty, and more. Configure alert delivery channels through your Avala dashboard or using the webhooks resource.

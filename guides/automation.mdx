@@ -1,0 +1,397 @@
+---
+title: Automation
+description: Use agents and auto-label jobs to automate labeling workflows with the Avala Python SDK
+---
+
+Avala provides automation capabilities through agents and auto-label jobs. Agents respond to events in your workflow, while auto-label jobs use machine learning models to automatically label data.
+
+## Working with Agents
+
+Agents automate tasks by responding to events in your labeling workflow.
+
+### Creating an Agent
+
+<Steps>
+  <Step title="Define basic agent properties">
+    ```python
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    agent = client.agents.create(
+        name="Quality Check Agent",
+        description="Automatically reviews completed tasks",
+        events=["task.completed"],
+        callback_url="https://api.example.com/webhooks/quality-check"
+    )
+
+    print(f"Agent created: {agent.uid}")
+    ```
+  </Step>
+
+  <Step title="Configure event filters (optional)">
+    ```python
+    agent = client.agents.create(
+        name="Project-Specific Agent",
+        events=["task.completed", "task.reviewed"],
+        callback_url="https://api.example.com/webhooks/processor",
+        project="proj_abc123",
+        task_types=["image_classification", "object_detection"],
+        is_active=True
+    )
+    ```
+  </Step>
+
+  <Step title="Test the agent">
+    ```python
+    # Test the agent configuration
+    result = client.agents.test(agent.uid)
+    print(f"Test result: {result}")
+    ```
+  </Step>
+</Steps>
+
+### Agent Parameters
+
+- `name` (required): Human-readable name for the agent
+- `events` (optional): List of events the agent responds to
+- `description`: Description of the agent's purpose
+- `callback_url`: Webhook URL to call when events occur
+- `is_active`: Whether the agent is active (default: `True`)
+- `project`: Limit agent to a specific project
+- `task_types`: Filter by specific task types
+
+### Listing Agents
+
+```python
+# List all agents
+agents = client.agents.list()
+
+for agent in agents:
+    print(f"{agent.name} - Active: {agent.is_active}")
+```
+
+### Getting an Agent
+
+```python
+agent = client.agents.get("agent_xyz789")
+
+print(f"Name: {agent.name}")
+print(f"Events: {agent.events}")
+print(f"Callback URL: {agent.callback_url}")
+print(f"Active: {agent.is_active}")
+```
+
+### Updating an Agent
+
+Modify agent configuration:
+
+```python
+# Update agent settings
+agent = client.agents.update(
+    "agent_xyz789",
+    is_active=False,
+    description="Updated description"
+)
+
+print(f"Agent updated: {agent.uid}")
+```
+
+```python
+# Change events and callback URL
+agent = client.agents.update(
+    "agent_xyz789",
+    events=["task.completed", "task.rejected"],
+    callback_url="https://api.example.com/new-webhook"
+)
+```
+
+### Deleting an Agent
+
+```python
+# Delete an agent
+client.agents.delete("agent_xyz789")
+print("Agent deleted")
+```
+
+### Viewing Agent Executions
+
+See when and how your agent has been triggered:
+
+```python
+# List executions for an agent
+executions = client.agents.list_executions("agent_xyz789")
+
+for execution in executions:
+    print(f"Executed at: {execution.created_at}")
+    print(f"Status: {execution.status}")
+    print(f"Event: {execution.event}")
+```
+
+```python
+# Paginate through executions
+page = client.agents.list_executions(
+    "agent_xyz789",
+    limit=50
+)
+
+for execution in page:
+    if execution.status == "failed":
+        print(f"Failed execution: {execution.error}")
+```
+
+## Auto-Label Jobs
+
+Auto-label jobs use machine learning models to automatically annotate data.
+
+### Creating an Auto-Label Job
+
+```python
+# Create auto-label job for a project
+job = client.auto_label_jobs.create(
+    project_uid="proj_abc123",
+    model_type="object_detection",
+    confidence_threshold=0.85
+)
+
+print(f"Auto-label job created: {job.uid}")
+print(f"Status: {job.status}")
+```
+
+### Filter by Labels
+
+Only auto-label specific classes:
+
+```python
+# Auto-label only specific labels
+job = client.auto_label_jobs.create(
+    project_uid="proj_abc123",
+    model_type="object_detection",
+    confidence_threshold=0.90,
+    labels=["car", "truck", "bus"]
+)
+```
+
+### Dry Run Mode
+
+Test auto-labeling without applying changes:
+
+```python
+# Run in dry-run mode to preview results
+job = client.auto_label_jobs.create(
+    project_uid="proj_abc123",
+    model_type="image_classification",
+    confidence_threshold=0.80,
+    dry_run=True
+)
+
+print(f"Dry run job: {job.uid}")
+```
+
+<Note>
+Dry run mode generates predictions but doesn't save them to your project. Use this to evaluate model performance before committing.
+</Note>
+
+### Monitoring Auto-Label Jobs
+
+```python
+import time
+
+# Create job
+job = client.auto_label_jobs.create(
+    project_uid="proj_abc123",
+    model_type="object_detection",
+    confidence_threshold=0.85
+)
+
+# Poll for completion
+while True:
+    job = client.auto_label_jobs.get(job.uid)
+    print(f"Status: {job.status}")
+    print(f"Progress: {job.progress}%")
+    
+    if job.status in ["completed", "failed"]:
+        break
+    
+    time.sleep(10)
+
+if job.status == "completed":
+    print(f"Labeled {job.tasks_labeled} tasks")
+else:
+    print(f"Job failed: {job.error}")
+```
+
+### Listing Auto-Label Jobs
+
+```python
+# List all auto-label jobs
+jobs = client.auto_label_jobs.list()
+
+for job in jobs:
+    print(f"Job {job.uid}: {job.status}")
+```
+
+```python
+# Filter by project
+jobs = client.auto_label_jobs.list(project="proj_abc123")
+
+for job in jobs:
+    print(f"{job.model_type} - {job.status}")
+```
+
+### Canceling an Auto-Label Job
+
+```python
+# Cancel a running job
+client.auto_label_jobs.cancel("job_123abc")
+print("Job canceled")
+```
+
+## Complete Example: Automated Workflow
+
+<Tabs>
+  <Tab title="Synchronous">
+    ```python
+    from avala import Avala
+    import time
+
+    client = Avala(api_key="your-api-key")
+
+    # 1. Create an agent to monitor task completion
+    print("Setting up automation agent...")
+    agent = client.agents.create(
+        name="Auto-Review Agent",
+        description="Triggers review for high-confidence predictions",
+        events=["task.completed"],
+        callback_url="https://api.example.com/review",
+        project="proj_abc123",
+        is_active=True
+    )
+    print(f"Agent created: {agent.uid}")
+
+    # 2. Start auto-labeling
+    print("\nStarting auto-label job...")
+    job = client.auto_label_jobs.create(
+        project_uid="proj_abc123",
+        model_type="object_detection",
+        confidence_threshold=0.85,
+        labels=["car", "truck", "pedestrian"]
+    )
+    print(f"Job UID: {job.uid}")
+
+    # 3. Monitor progress
+    print("\nMonitoring job progress...")
+    while True:
+        job = client.auto_label_jobs.get(job.uid)
+        print(f"Status: {job.status} - Progress: {job.progress}%")
+        
+        if job.status == "completed":
+            print(f"\nCompleted! Labeled {job.tasks_labeled} tasks")
+            break
+        elif job.status == "failed":
+            print(f"\nFailed: {job.error}")
+            break
+        
+        time.sleep(10)
+
+    # 4. Check agent executions
+    print("\nChecking agent executions...")
+    executions = client.agents.list_executions(agent.uid, limit=10)
+    print(f"Agent executed {len(list(executions))} times")
+    ```
+  </Tab>
+
+  <Tab title="Async">
+    ```python
+    import asyncio
+    from avala import AsyncAvala
+
+    async def automate_workflow():
+        client = AsyncAvala(api_key="your-api-key")
+
+        # 1. Create an agent to monitor task completion
+        print("Setting up automation agent...")
+        agent = await client.agents.create(
+            name="Auto-Review Agent",
+            description="Triggers review for high-confidence predictions",
+            events=["task.completed"],
+            callback_url="https://api.example.com/review",
+            project="proj_abc123",
+            is_active=True
+        )
+        print(f"Agent created: {agent.uid}")
+
+        # 2. Start auto-labeling
+        print("\nStarting auto-label job...")
+        job = await client.auto_label_jobs.create(
+            project_uid="proj_abc123",
+            model_type="object_detection",
+            confidence_threshold=0.85,
+            labels=["car", "truck", "pedestrian"]
+        )
+        print(f"Job UID: {job.uid}")
+
+        # 3. Monitor progress
+        print("\nMonitoring job progress...")
+        while True:
+            job = await client.auto_label_jobs.get(job.uid)
+            print(f"Status: {job.status} - Progress: {job.progress}%")
+            
+            if job.status == "completed":
+                print(f"\nCompleted! Labeled {job.tasks_labeled} tasks")
+                break
+            elif job.status == "failed":
+                print(f"\nFailed: {job.error}")
+                break
+            
+            await asyncio.sleep(10)
+
+        # 4. Check agent executions
+        print("\nChecking agent executions...")
+        executions = await client.agents.list_executions(agent.uid, limit=10)
+        print(f"Agent executed {len(list(executions))} times")
+
+    asyncio.run(automate_workflow())
+    ```
+  </Tab>
+</Tabs>
+
+## Agent Event Types
+
+Common event types for agents:
+
+- `task.created`: New task was created
+- `task.completed`: Task was marked complete
+- `task.reviewed`: Task passed review
+- `task.rejected`: Task was rejected
+- `project.updated`: Project settings changed
+- `dataset.updated`: Dataset was modified
+
+## Auto-Label Model Types
+
+Available model types depend on your project configuration:
+
+- `image_classification`: Classify entire images
+- `object_detection`: Detect and locate objects
+- `semantic_segmentation`: Pixel-level segmentation
+- `instance_segmentation`: Object instance segmentation
+- `text_classification`: Classify text documents
+- `named_entity_recognition`: Extract entities from text
+
+<Warning>
+Model availability depends on your Avala plan and project configuration. Contact support for custom models.
+</Warning>
+
+## Best Practices
+
+<Tip>
+- Test agents using the `test()` method before activating
+- Start with higher confidence thresholds (0.85+) and adjust based on results
+- Use dry run mode to evaluate auto-label quality
+- Monitor agent executions regularly to catch errors
+- Set appropriate event filters to avoid unnecessary agent triggers
+</Tip>
+
+<Warning>
+Auto-label jobs consume compute resources. Large projects may take significant time to process.
+</Warning>

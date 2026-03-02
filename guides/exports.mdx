@@ -1,0 +1,327 @@
+---
+title: Exporting Data
+description: Create exports, check status, and download results using the Avala Python SDK
+---
+
+Exports allow you to download labeled data from projects or datasets. The Avala SDK provides methods to create exports, monitor their progress, and retrieve results.
+
+## Creating an Export
+
+### Export from a Project
+
+Export all labeled data from a specific project:
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# Create export for a project
+export = client.exports.create(project="proj_abc123")
+
+print(f"Export created: {export.uid}")
+print(f"Status: {export.status}")
+```
+
+### Export from a Dataset
+
+Export data from a dataset:
+
+```python
+# Create export for a dataset
+export = client.exports.create(dataset="ds_xyz789")
+
+print(f"Export created: {export.uid}")
+```
+
+### Export Both Project and Dataset
+
+```python
+# Export with both project and dataset specified
+export = client.exports.create(
+    project="proj_abc123",
+    dataset="ds_xyz789"
+)
+```
+
+<Note>
+You can specify either `project`, `dataset`, or both when creating an export.
+</Note>
+
+## Checking Export Status
+
+Exports are processed asynchronously. Check the status before downloading:
+
+<Steps>
+  <Step title="Create the export">
+    ```python
+    export = client.exports.create(project="proj_abc123")
+    print(f"Export UID: {export.uid}")
+    ```
+  </Step>
+
+  <Step title="Poll for completion">
+    ```python
+    import time
+
+    while True:
+        export = client.exports.get(export.uid)
+        print(f"Status: {export.status}")
+        
+        if export.status == "completed":
+            print("Export ready!")
+            break
+        elif export.status == "failed":
+            print(f"Export failed: {export.error}")
+            break
+        
+        time.sleep(5)  # Wait 5 seconds before checking again
+    ```
+  </Step>
+
+  <Step title="Download the results">
+    ```python
+    if export.status == "completed":
+        print(f"Download URL: {export.download_url}")
+        print(f"Expires at: {export.expires_at}")
+    ```
+  </Step>
+</Steps>
+
+## Export Status Values
+
+Exports go through several status stages:
+
+- `pending`: Export has been queued
+- `processing`: Export is being generated
+- `completed`: Export is ready for download
+- `failed`: Export encountered an error
+
+## Downloading Export Results
+
+Once an export is completed, download the results:
+
+```python
+import requests
+
+# Get the export
+export = client.exports.get("exp_123abc")
+
+if export.status == "completed":
+    # Download the file
+    response = requests.get(export.download_url)
+    
+    with open("export_data.zip", "wb") as f:
+        f.write(response.content)
+    
+    print("Export downloaded successfully")
+```
+
+<Warning>
+Download URLs are temporary and expire after a certain period (typically 24 hours). Check the `expires_at` field.
+</Warning>
+
+## Listing Exports
+
+View all exports created by your account:
+
+```python
+# List all exports
+exports = client.exports.list()
+
+for export in exports:
+    print(f"{export.uid} - Status: {export.status}")
+```
+
+### Pagination
+
+```python
+# Get exports with pagination
+page = client.exports.list(limit=50)
+
+for export in page:
+    print(f"Export {export.uid}: {export.status}")
+
+# Get next page
+if page.has_next:
+    next_page = client.exports.list(
+        cursor=page.next_cursor,
+        limit=50
+    )
+```
+
+## Complete Export Workflow
+
+<Tabs>
+  <Tab title="Synchronous">
+    ```python
+    import time
+    import requests
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    # Create export
+    print("Creating export...")
+    export = client.exports.create(project="proj_abc123")
+    print(f"Export UID: {export.uid}")
+
+    # Wait for completion
+    print("Waiting for export to complete...")
+    while True:
+        export = client.exports.get(export.uid)
+        print(f"Status: {export.status}")
+        
+        if export.status == "completed":
+            break
+        elif export.status == "failed":
+            print(f"Export failed: {export.error}")
+            exit(1)
+        
+        time.sleep(5)
+
+    # Download results
+    print("Downloading export...")
+    response = requests.get(export.download_url)
+    
+    with open("project_export.zip", "wb") as f:
+        f.write(response.content)
+    
+    print("Export downloaded to project_export.zip")
+    ```
+  </Tab>
+
+  <Tab title="Async">
+    ```python
+    import asyncio
+    import aiohttp
+    from avala import AsyncAvala
+
+    async def download_export():
+        client = AsyncAvala(api_key="your-api-key")
+
+        # Create export
+        print("Creating export...")
+        export = await client.exports.create(project="proj_abc123")
+        print(f"Export UID: {export.uid}")
+
+        # Wait for completion
+        print("Waiting for export to complete...")
+        while True:
+            export = await client.exports.get(export.uid)
+            print(f"Status: {export.status}")
+            
+            if export.status == "completed":
+                break
+            elif export.status == "failed":
+                print(f"Export failed: {export.error}")
+                return
+            
+            await asyncio.sleep(5)
+
+        # Download results
+        print("Downloading export...")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(export.download_url) as response:
+                with open("project_export.zip", "wb") as f:
+                    f.write(await response.read())
+        
+        print("Export downloaded to project_export.zip")
+
+    asyncio.run(download_export())
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced: Automated Export Monitoring
+
+Create a reusable function to monitor exports:
+
+```python
+import time
+from typing import Optional
+
+def wait_for_export(
+    client,
+    export_uid: str,
+    poll_interval: int = 5,
+    timeout: Optional[int] = 300
+):
+    """Wait for an export to complete.
+    
+    Args:
+        client: Avala client instance
+        export_uid: UID of the export to monitor
+        poll_interval: Seconds to wait between status checks
+        timeout: Maximum seconds to wait (None for no timeout)
+    
+    Returns:
+        Export object when completed
+    
+    Raises:
+        TimeoutError: If export doesn't complete within timeout
+        RuntimeError: If export fails
+    """
+    start_time = time.time()
+    
+    while True:
+        export = client.exports.get(export_uid)
+        
+        if export.status == "completed":
+            return export
+        elif export.status == "failed":
+            raise RuntimeError(f"Export failed: {export.error}")
+        
+        # Check timeout
+        if timeout and (time.time() - start_time) > timeout:
+            raise TimeoutError(f"Export did not complete within {timeout}s")
+        
+        time.sleep(poll_interval)
+
+# Usage
+export = client.exports.create(project="proj_abc123")
+print(f"Waiting for export {export.uid}...")
+
+try:
+    completed_export = wait_for_export(client, export.uid, timeout=600)
+    print(f"Export ready: {completed_export.download_url}")
+except TimeoutError as e:
+    print(f"Timeout: {e}")
+except RuntimeError as e:
+    print(f"Error: {e}")
+```
+
+## Export Data Formats
+
+Exports typically include:
+
+- Labeled annotations in JSON format
+- Original data files (if applicable)
+- Metadata and task information
+- Project or dataset configuration
+
+<Tip>
+The export format depends on your project type and configuration. Check the downloaded archive for a README or schema file.
+</Tip>
+
+## Best Practices
+
+<Tip>
+- Poll export status at reasonable intervals (5-10 seconds) to avoid rate limits
+- Set timeouts when waiting for exports to prevent indefinite waiting
+- Download exports promptly before the download URL expires
+- Store export UIDs for tracking and auditing purposes
+</Tip>
+
+<Warning>
+Large exports may take several minutes to process. Always implement timeout handling in production code.
+</Warning>
+
+## Troubleshooting
+
+If an export fails:
+
+1. Check the `error` field on the export object for details
+2. Verify that the project or dataset exists and is accessible
+3. Ensure your API key has permission to export data
+4. Try creating a new export if the failure was temporary

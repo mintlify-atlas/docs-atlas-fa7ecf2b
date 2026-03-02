@@ -1,0 +1,317 @@
+---
+title: Authentication
+description: Configure API key authentication for secure access to the Avala API
+---
+
+The Avala SDK uses API keys to authenticate requests. All requests must include a valid API key with appropriate permissions.
+
+## Get your API key
+
+<Steps>
+  <Step title="Log in to Avala">
+    Navigate to [app.avala.ai](https://app.avala.ai)
+  </Step>
+  
+  <Step title="Open API settings">
+    Go to **Settings** → **API Keys**
+  </Step>
+  
+  <Step title="Generate a new key">
+    Click **Create API Key** and give it a descriptive name
+  </Step>
+  
+  <Step title="Copy the key">
+    Copy the generated key—it starts with `avk_`
+  </Step>
+</Steps>
+
+<Warning>
+  API keys are shown only once. Store your key securely—if you lose it, you'll need to generate a new one.
+</Warning>
+
+## Set environment variable (recommended)
+
+The simplest and most secure method is to set the `AVALA_API_KEY` environment variable:
+
+<CodeGroup>
+```bash Linux/macOS
+export AVALA_API_KEY="avk_your_api_key"
+```
+
+```bash Windows (PowerShell)
+$env:AVALA_API_KEY="avk_your_api_key"
+```
+
+```bash Windows (CMD)
+set AVALA_API_KEY=avk_your_api_key
+```
+</CodeGroup>
+
+The client will automatically read this variable:
+
+```python
+from avala import Client
+
+client = Client()  # Reads AVALA_API_KEY automatically
+```
+
+<Tip>
+  Add the `export` line to your shell profile (`.bashrc`, `.zshrc`, etc.) to persist the variable across sessions.
+</Tip>
+
+## Pass the key explicitly
+
+Alternatively, pass the API key directly when creating the client:
+
+```python
+from avala import Client
+
+client = Client(api_key="avk_your_api_key")
+```
+
+<Warning>
+  Never hardcode API keys in source code that's committed to version control. Use environment variables or secret management tools instead.
+</Warning>
+
+## Use a `.env` file
+
+For local development, use a `.env` file to manage secrets:
+
+<Steps>
+  <Step title="Create a .env file">
+    ```bash .env
+    AVALA_API_KEY=avk_your_api_key
+    ```
+  </Step>
+  
+  <Step title="Add .env to .gitignore">
+    ```bash .gitignore
+    .env
+    ```
+  </Step>
+  
+  <Step title="Load with python-dotenv">
+    ```bash
+    pip install python-dotenv
+    ```
+    
+    ```python
+    from dotenv import load_dotenv
+    from avala import Client
+    
+    load_dotenv()  # Loads .env into environment variables
+    client = Client()  # Reads AVALA_API_KEY from environment
+    ```
+  </Step>
+</Steps>
+
+## Configure async client
+
+The async client uses the same authentication methods:
+
+```python
+from avala import AsyncClient
+
+# From environment variable
+async with AsyncClient() as client:
+    datasets = await client.datasets.list()
+
+# Or pass explicitly
+async with AsyncClient(api_key="avk_your_api_key") as client:
+    datasets = await client.datasets.list()
+```
+
+## Handle authentication errors
+
+The SDK raises `AuthenticationError` when the API key is invalid or missing:
+
+```python
+from avala import Client
+from avala.errors import AuthenticationError
+
+try:
+    client = Client(api_key="invalid_key")
+    datasets = client.datasets.list()
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+    print("Check that your API key is valid")
+```
+
+<Note>
+  If you don't provide an API key and `AVALA_API_KEY` is not set, the client will raise a `ValueError` during initialization—before making any API requests.
+</Note>
+
+## Production deployment
+
+### Environment variables
+
+For production deployments, use your platform's secret management:
+
+<CodeGroup>
+```bash Heroku
+heroku config:set AVALA_API_KEY=avk_your_api_key
+```
+
+```bash Render
+# Set in the Render dashboard under Environment Variables
+AVALA_API_KEY=avk_your_api_key
+```
+
+```bash Railway
+# Set in the Railway dashboard under Variables
+AVALA_API_KEY=avk_your_api_key
+```
+
+```yaml Docker Compose
+services:
+  app:
+    image: your-app
+    environment:
+      - AVALA_API_KEY=${AVALA_API_KEY}
+```
+
+```yaml Kubernetes
+apiVersion: v1
+kind: Secret
+metadata:
+  name: avala-secret
+type: Opaque
+stringData:
+  api-key: avk_your_api_key
+---
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: app
+    env:
+    - name: AVALA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: avala-secret
+          key: api-key
+```
+</CodeGroup>
+
+### AWS Secrets Manager
+
+```python
+import boto3
+from avala import Client
+
+def get_secret():
+    client = boto3.client('secretsmanager', region_name='us-east-1')
+    response = client.get_secret_value(SecretId='avala/api-key')
+    return response['SecretString']
+
+avala_client = Client(api_key=get_secret())
+```
+
+### Google Cloud Secret Manager
+
+```python
+from google.cloud import secretmanager
+from avala import Client
+
+def get_secret():
+    client = secretmanager.SecretManagerServiceClient()
+    name = "projects/PROJECT_ID/secrets/avala-api-key/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    return response.payload.data.decode('UTF-8')
+
+avala_client = Client(api_key=get_secret())
+```
+
+## Security best practices
+
+<AccordionGroup>
+  <Accordion title="Never commit API keys">
+    Always use environment variables or secret management systems. Add `.env` to `.gitignore` and audit your repository for accidentally committed secrets.
+  </Accordion>
+  
+  <Accordion title="Rotate keys regularly">
+    Generate new API keys periodically and revoke old ones. This limits the impact of a potential key compromise.
+  </Accordion>
+  
+  <Accordion title="Use separate keys per environment">
+    Create different API keys for development, staging, and production. This allows you to revoke a compromised key without affecting other environments.
+  </Accordion>
+  
+  <Accordion title="Restrict key permissions">
+    Use the principle of least privilege. If Avala supports scoped API keys in the future, grant only the minimum permissions needed.
+  </Accordion>
+  
+  <Accordion title="Monitor key usage">
+    Regularly review API key usage in your Avala dashboard to detect unauthorized access.
+  </Accordion>
+</AccordionGroup>
+
+## Custom base URL
+
+By default, the SDK connects to `https://api.avala.ai/api/v1`. For testing or on-premises deployments, override the base URL:
+
+```python
+from avala import Client
+
+client = Client(
+    api_key="avk_your_api_key",
+    base_url="https://custom-api.example.com/api/v1"
+)
+```
+
+Or use the `AVALA_BASE_URL` environment variable:
+
+```bash
+export AVALA_BASE_URL="https://custom-api.example.com/api/v1"
+export AVALA_API_KEY="avk_your_api_key"
+```
+
+<Warning>
+  The SDK enforces HTTPS by default. To use HTTP for local development (e.g., `http://localhost`), set `AVALA_ALLOW_INSECURE_BASE_URL=true`. This is only allowed for localhost addresses.
+</Warning>
+
+### Local development
+
+```bash
+export AVALA_BASE_URL="http://localhost:8000/api/v1"
+export AVALA_ALLOW_INSECURE_BASE_URL=true
+export AVALA_API_KEY="avk_test_key"
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ValueError: No API key provided">
+    The SDK couldn't find your API key. Ensure `AVALA_API_KEY` is set or pass `api_key=` explicitly:
+    
+    ```python
+    # Check if the variable is set
+    import os
+    print(os.environ.get('AVALA_API_KEY'))  # Should print your key
+    ```
+  </Accordion>
+  
+  <Accordion title="AuthenticationError: Invalid API key">
+    Your API key is incorrect or has been revoked. Generate a new key from the Avala dashboard and update your configuration.
+  </Accordion>
+  
+  <Accordion title="AuthenticationError: API key expired">
+    Some API keys may have expiration dates. Check your dashboard and generate a new key if needed.
+  </Accordion>
+  
+  <Accordion title="ValueError: Invalid base_url">
+    The `base_url` must be a valid URL with a scheme (http/https) and host. Check your `AVALA_BASE_URL` environment variable or `base_url` parameter.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API calls with the authenticated client
+  </Card>
+  
+  <Card title="Error Handling" icon="triangle-exclamation" href="/concepts/error-handling">
+    Handle authentication errors gracefully
+  </Card>
+</CardGroup>

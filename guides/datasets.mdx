@@ -1,0 +1,330 @@
+---
+title: Working with Datasets
+description: Learn how to manage datasets, dataset items, and sequences using the Avala Python SDK
+---
+
+Datasets are collections of labeled data used for training and evaluation. The Avala SDK provides methods to manage datasets, their items, and sequences.
+
+## Listing Datasets
+
+Retrieve all datasets with optional filtering:
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all datasets
+datasets = client.datasets.list()
+
+for dataset in datasets:
+    print(f"{dataset.name} ({dataset.uid})")
+```
+
+### Filter by Data Type
+
+```python
+# List only image datasets
+image_datasets = client.datasets.list(data_type="image")
+
+# List video datasets
+video_datasets = client.datasets.list(data_type="video")
+```
+
+### Filter by Status and Visibility
+
+```python
+# List active datasets
+active_datasets = client.datasets.list(status="active")
+
+# List public datasets
+public_datasets = client.datasets.list(visibility="public")
+
+# Combine filters
+results = client.datasets.list(
+    data_type="image",
+    status="active",
+    visibility="private"
+)
+```
+
+### Pagination
+
+```python
+# Get first page with 50 results
+page = client.datasets.list(limit=50)
+
+# Get next page using cursor
+if page.has_next:
+    next_page = client.datasets.list(cursor=page.next_cursor, limit=50)
+```
+
+## Getting a Dataset
+
+Retrieve a specific dataset by its UID:
+
+```python
+dataset = client.datasets.get("ds_abc123")
+
+print(f"Name: {dataset.name}")
+print(f"Type: {dataset.data_type}")
+print(f"Sequences: {dataset.is_sequence}")
+```
+
+## Creating a Dataset
+
+Create a new dataset with the required parameters:
+
+<Steps>
+  <Step title="Define dataset properties">
+    Choose a name, slug, and data type for your dataset:
+
+    ```python
+    dataset = client.datasets.create(
+        name="Traffic Signs Dataset",
+        slug="traffic-signs",
+        data_type="image"
+    )
+    ```
+  </Step>
+
+  <Step title="Configure optional settings">
+    Set visibility, sequence support, and other options:
+
+    ```python
+    dataset = client.datasets.create(
+        name="Video Surveillance",
+        slug="video-surveillance",
+        data_type="video",
+        is_sequence=True,
+        visibility="private",
+        create_metadata=True
+    )
+    ```
+  </Step>
+
+  <Step title="Add provider configuration (optional)">
+    Configure cloud storage integration:
+
+    ```python
+    dataset = client.datasets.create(
+        name="Medical Images",
+        slug="medical-images",
+        data_type="image",
+        provider_config={
+            "storage_config_uid": "sc_xyz789",
+            "path_prefix": "medical/images/"
+        },
+        owner_name="research-team"
+    )
+    ```
+  </Step>
+</Steps>
+
+### Parameters
+
+- `name` (required): Human-readable name for the dataset
+- `slug` (required): URL-friendly identifier
+- `data_type` (required): Type of data (e.g., "image", "video", "text")
+- `is_sequence`: Whether the dataset contains sequences (default: `False`)
+- `visibility`: Dataset visibility ("private" or "public", default: "private")
+- `create_metadata`: Automatically create metadata fields (default: `True`)
+- `provider_config`: Cloud storage configuration
+- `owner_name`: Organization or user that owns the dataset
+
+## Working with Dataset Items
+
+Dataset items are individual data points within a dataset.
+
+### Listing Items
+
+```python
+# List all items in a dataset
+items = client.datasets.list_items(
+    owner="research-team",
+    slug="traffic-signs"
+)
+
+for item in items:
+    print(f"Item: {item.uid}")
+```
+
+### Pagination for Items
+
+```python
+# Get items with pagination
+page = client.datasets.list_items(
+    owner="research-team",
+    slug="traffic-signs",
+    limit=100
+)
+
+# Process all items across pages
+while True:
+    for item in page:
+        process_item(item)
+    
+    if not page.has_next:
+        break
+    
+    page = client.datasets.list_items(
+        owner="research-team",
+        slug="traffic-signs",
+        cursor=page.next_cursor,
+        limit=100
+    )
+```
+
+### Getting a Specific Item
+
+```python
+item = client.datasets.get_item(
+    owner="research-team",
+    slug="traffic-signs",
+    item_uid="item_123abc"
+)
+
+print(f"Item data: {item.data}")
+print(f"Labels: {item.labels}")
+```
+
+## Working with Dataset Sequences
+
+Sequences group related items together (e.g., video frames, time-series data).
+
+<Note>
+Sequences are only available for datasets created with `is_sequence=True`.
+</Note>
+
+### Listing Sequences
+
+```python
+# List all sequences in a dataset
+sequences = client.datasets.list_sequences(
+    owner="research-team",
+    slug="video-surveillance"
+)
+
+for sequence in sequences:
+    print(f"Sequence: {sequence.uid}")
+```
+
+### Getting a Specific Sequence
+
+```python
+sequence = client.datasets.get_sequence(
+    owner="research-team",
+    slug="video-surveillance",
+    sequence_uid="seq_456def"
+)
+
+print(f"Sequence items: {len(sequence.items)}")
+```
+
+### Pagination for Sequences
+
+```python
+# Get sequences with pagination
+page = client.datasets.list_sequences(
+    owner="research-team",
+    slug="video-surveillance",
+    limit=50
+)
+
+for sequence in page:
+    print(f"Processing sequence: {sequence.uid}")
+```
+
+## Complete Example
+
+<Tabs>
+  <Tab title="Synchronous">
+    ```python
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    # Create a new dataset
+    dataset = client.datasets.create(
+        name="Autonomous Driving",
+        slug="autonomous-driving",
+        data_type="image",
+        visibility="private"
+    )
+
+    print(f"Created dataset: {dataset.uid}")
+
+    # List all items
+    items = client.datasets.list_items(
+        owner="my-org",
+        slug="autonomous-driving",
+        limit=100
+    )
+
+    print(f"Dataset contains {len(list(items))} items")
+
+    # Get specific item details
+    if len(list(items)) > 0:
+        first_item = client.datasets.get_item(
+            owner="my-org",
+            slug="autonomous-driving",
+            item_uid=items[0].uid
+        )
+        print(f"First item: {first_item.data}")
+    ```
+  </Tab>
+
+  <Tab title="Async">
+    ```python
+    import asyncio
+    from avala import AsyncAvala
+
+    async def main():
+        client = AsyncAvala(api_key="your-api-key")
+
+        # Create a new dataset
+        dataset = await client.datasets.create(
+            name="Autonomous Driving",
+            slug="autonomous-driving",
+            data_type="image",
+            visibility="private"
+        )
+
+        print(f"Created dataset: {dataset.uid}")
+
+        # List all items
+        items = await client.datasets.list_items(
+            owner="my-org",
+            slug="autonomous-driving",
+            limit=100
+        )
+
+        print(f"Dataset contains {len(list(items))} items")
+
+        # Get specific item details
+        items_list = list(items)
+        if len(items_list) > 0:
+            first_item = await client.datasets.get_item(
+                owner="my-org",
+                slug="autonomous-driving",
+                item_uid=items_list[0].uid
+            )
+            print(f"First item: {first_item.data}")
+
+    asyncio.run(main())
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<Tip>
+- Use descriptive names and slugs that clearly identify your dataset
+- Set appropriate visibility levels to protect sensitive data
+- Use pagination when working with large datasets
+- Enable sequences for time-series or video data
+</Tip>
+
+<Warning>
+Dataset slugs must be unique within an organization and cannot be changed after creation.
+</Warning>

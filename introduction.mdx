@@ -1,0 +1,105 @@
+---
+title: Introduction
+description: Official Python SDK for building and managing ML annotation datasets, projects, and tasks with Avala
+---
+
+The Avala Python SDK provides a simple, type-safe interface to the Avala API. Build annotation workflows, manage datasets and projects, create exports, and automate labeling tasks—all from Python.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started with pip, Poetry, or uv
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Initialize the client and run your first API calls
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Configure your API key and secure access
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/client">
+    Explore all available resources and methods
+  </Card>
+</CardGroup>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Type-safe API" icon="shield-check">
+    Built with Pydantic models for runtime validation and excellent editor support
+  </Card>
+  <Card title="Async support" icon="bolt">
+    Use `AsyncClient` for high-performance concurrent operations
+  </Card>
+  <Card title="Automatic pagination" icon="arrows-rotate">
+    Iterate through large result sets with cursor-based pagination
+  </Card>
+  <Card title="Built-in error handling" icon="triangle-exclamation">
+    Comprehensive error hierarchy for authentication, rate limits, and validation
+  </Card>
+  <Card title="Configurable retries" icon="repeat">
+    Automatic retry logic with exponential backoff for transient failures
+  </Card>
+  <Card title="CLI included" icon="terminal">
+    Command-line interface for quick dataset inspection and export creation
+  </Card>
+</CardGroup>
+
+## What you can build
+
+<AccordionGroup>
+  <Accordion title="Dataset management">
+    Create, list, and inspect annotation datasets. Filter by data type, status, or visibility. Access dataset items and sequences programmatically.
+  </Accordion>
+  
+  <Accordion title="Project workflows">
+    Browse annotation projects, retrieve project details, and integrate project data into your ML pipelines.
+  </Accordion>
+  
+  <Accordion title="Export automation">
+    Create exports for datasets or projects, monitor export status, and download annotation data in standard formats.
+  </Accordion>
+  
+  <Accordion title="Task tracking">
+    Query annotation tasks with filters for project, status, or assignee. Monitor progress and completion rates.
+  </Accordion>
+  
+  <Accordion title="Auto-labeling pipelines">
+    Configure inference providers, create auto-label jobs, and manage batch labeling workflows.
+  </Accordion>
+  
+  <Accordion title="Quality control">
+    Set up quality targets, compute consensus scores, and evaluate annotation quality programmatically.
+  </Accordion>
+  
+  <Accordion title="Webhook integrations">
+    Subscribe to events, manage webhook endpoints, and inspect delivery logs for real-time integrations.
+  </Accordion>
+  
+  <Accordion title="Fleet management">
+    Manage edge devices, recordings, events, and alerting rules for computer vision applications.
+  </Accordion>
+</AccordionGroup>
+
+## Requirements
+
+- Python 3.9 or higher
+- An Avala API key ([get one here](https://app.avala.ai/settings/api-keys))
+
+## Next steps
+
+<Steps>
+  <Step title="Install the SDK">
+    Follow the [installation guide](/installation) to add Avala to your project
+  </Step>
+  
+  <Step title="Configure authentication">
+    Set up your API key using the [authentication guide](/authentication)
+  </Step>
+  
+  <Step title="Run the quickstart">
+    Try the [quickstart examples](/quickstart) to make your first API calls
+  </Step>
+  
+  <Step title="Explore the API">
+    Browse the [API reference](/api-reference/client) to discover all available resources
+  </Step>
+</Steps>

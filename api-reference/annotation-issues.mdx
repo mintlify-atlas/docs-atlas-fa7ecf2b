@@ -1,0 +1,345 @@
+---
+title: "Annotation Issues"
+description: "Create and manage annotation quality control issues"
+---
+
+## Sequence-Scoped Methods
+
+### client.annotation_issues.list_by_sequence()
+
+List all annotation issues for a specific sequence.
+
+<ParamField path="sequence_uid" type="str" required>
+  Unique identifier of the sequence
+</ParamField>
+
+<ParamField query="dataset_item_uid" type="str">
+  Filter by dataset item UID
+</ParamField>
+
+<ParamField query="project_uid" type="str">
+  Filter by project UID
+</ParamField>
+
+<ResponseField name="response" type="List[AnnotationIssue]">
+  List of annotation issues for the sequence
+</ResponseField>
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+issues = client.annotation_issues.list_by_sequence(
+    sequence_uid="seq-123",
+    project_uid="proj-456"
+)
+for issue in issues:
+    print(f"{issue.uid}: {issue.description}")
+```
+
+---
+
+### client.annotation_issues.create()
+
+Create a new annotation issue for a sequence.
+
+<ParamField path="sequence_uid" type="str" required>
+  Unique identifier of the sequence
+</ParamField>
+
+<ParamField body="tool_uid" type="str" required>
+  UID of the annotation tool associated with the issue
+</ParamField>
+
+<ParamField body="problem_uid" type="str" required>
+  UID identifying the type of problem
+</ParamField>
+
+<ParamField body="dataset_item_uid" type="str">
+  Dataset item where the issue occurs
+</ParamField>
+
+<ParamField body="project_uid" type="str">
+  Project context for the issue
+</ParamField>
+
+<ParamField body="priority" type="str">
+  Issue priority level
+</ParamField>
+
+<ParamField body="severity" type="str">
+  Issue severity level
+</ParamField>
+
+<ParamField body="description" type="str">
+  Detailed description of the issue
+</ParamField>
+
+<ParamField body="wrong_class" type="str">
+  Incorrect class label
+</ParamField>
+
+<ParamField body="correct_class" type="str">
+  Correct class label
+</ParamField>
+
+<ParamField body="should_re_annotate" type="bool">
+  Whether the annotation should be redone
+</ParamField>
+
+<ParamField body="should_delete" type="bool">
+  Whether the annotation should be deleted
+</ParamField>
+
+<ParamField body="frames_affected" type="str">
+  Description of which frames are affected
+</ParamField>
+
+<ParamField body="coordinates" type="Any">
+  Spatial coordinates related to the issue
+</ParamField>
+
+<ParamField body="query_params" type="Dict[str, Any]">
+  Additional query parameters
+</ParamField>
+
+<ParamField body="object_uid" type="str">
+  UID of the object related to the issue
+</ParamField>
+
+<ResponseField name="response" type="AnnotationIssue">
+  The newly created annotation issue
+</ResponseField>
+
+```python
+issue = client.annotation_issues.create(
+    sequence_uid="seq-123",
+    tool_uid="tool-456",
+    problem_uid="problem-789",
+    priority="high",
+    severity="critical",
+    description="Incorrect bounding box placement",
+    wrong_class="car",
+    correct_class="truck",
+    should_re_annotate=True
+)
+```
+
+---
+
+### client.annotation_issues.update()
+
+Update an existing annotation issue.
+
+<ParamField path="sequence_uid" type="str" required>
+  Unique identifier of the sequence
+</ParamField>
+
+<ParamField path="issue_uid" type="str" required>
+  Unique identifier of the annotation issue
+</ParamField>
+
+<ParamField body="status" type="str">
+  Updated status of the issue
+</ParamField>
+
+<ParamField body="priority" type="str">
+  Updated priority level
+</ParamField>
+
+<ParamField body="severity" type="str">
+  Updated severity level
+</ParamField>
+
+<ParamField body="description" type="str">
+  Updated description
+</ParamField>
+
+<ParamField body="tool_uid" type="str">
+  Updated tool UID
+</ParamField>
+
+<ParamField body="problem_uid" type="str">
+  Updated problem UID
+</ParamField>
+
+<ParamField body="wrong_class" type="str">
+  Updated wrong class label
+</ParamField>
+
+<ParamField body="frames_affected" type="str">
+  Updated frames affected description
+</ParamField>
+
+<ResponseField name="response" type="AnnotationIssue">
+  The updated annotation issue
+</ResponseField>
+
+```python
+updated_issue = client.annotation_issues.update(
+    sequence_uid="seq-123",
+    issue_uid="issue-789",
+    status="resolved",
+    priority="low"
+)
+```
+
+---
+
+### client.annotation_issues.delete()
+
+Delete an annotation issue.
+
+<ParamField path="sequence_uid" type="str" required>
+  Unique identifier of the sequence
+</ParamField>
+
+<ParamField path="issue_uid" type="str" required>
+  Unique identifier of the annotation issue to delete
+</ParamField>
+
+```python
+client.annotation_issues.delete(
+    sequence_uid="seq-123",
+    issue_uid="issue-789"
+)
+```
+
+---
+
+## Dataset-Scoped Methods
+
+### client.annotation_issues.list_by_dataset()
+
+List all annotation issues for a dataset.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField path="dataset_slug" type="str" required>
+  Dataset identifier slug
+</ParamField>
+
+<ParamField query="sequence_uid" type="str">
+  Filter by sequence UID
+</ParamField>
+
+<ResponseField name="response" type="List[AnnotationIssue]">
+  List of annotation issues for the dataset
+</ResponseField>
+
+```python
+issues = client.annotation_issues.list_by_dataset(
+    owner="username",
+    dataset_slug="my-dataset",
+    sequence_uid="seq-123"
+)
+```
+
+---
+
+### client.annotation_issues.get_metrics()
+
+Retrieve annotation issue metrics for a dataset.
+
+<ParamField path="owner" type="str" required>
+  Username or organization slug
+</ParamField>
+
+<ParamField path="dataset_slug" type="str" required>
+  Dataset identifier slug
+</ParamField>
+
+<ParamField query="sequence_uid" type="str">
+  Filter metrics by sequence UID
+</ParamField>
+
+<ResponseField name="response" type="AnnotationIssueMetrics">
+  Metrics summary for annotation issues
+</ResponseField>
+
+```python
+metrics = client.annotation_issues.get_metrics(
+    owner="username",
+    dataset_slug="my-dataset"
+)
+print(f"Total issues: {metrics.total_count}")
+```
+
+---
+
+## Tool Methods
+
+### client.annotation_issues.list_tools()
+
+List available annotation quality control tools for a dataset type.
+
+<ParamField query="dataset_type" type="str" required>
+  Type of dataset (e.g., "image", "video", "lidar")
+</ParamField>
+
+<ResponseField name="response" type="List[AnnotationIssueToolDetail]">
+  List of available QC tools with their problem types
+</ResponseField>
+
+```python
+tools = client.annotation_issues.list_tools(
+    dataset_type="image"
+)
+for tool in tools:
+    print(f"{tool.name}: {tool.description}")
+    for problem in tool.problems:
+        print(f"  - {problem.name}")
+```
+
+---
+
+## Async Methods
+
+All methods are available in async form via `client.annotation_issues` when using `AsyncAvala`:
+
+```python
+from avala import AsyncAvala
+
+async with AsyncAvala(api_key="your-api-key") as client:
+    # Sequence-scoped
+    issues = await client.annotation_issues.list_by_sequence(
+        sequence_uid="seq-123"
+    )
+    
+    issue = await client.annotation_issues.create(
+        sequence_uid="seq-123",
+        tool_uid="tool-456",
+        problem_uid="problem-789",
+        description="Issue description"
+    )
+    
+    updated = await client.annotation_issues.update(
+        sequence_uid="seq-123",
+        issue_uid="issue-789",
+        status="resolved"
+    )
+    
+    await client.annotation_issues.delete(
+        sequence_uid="seq-123",
+        issue_uid="issue-789"
+    )
+    
+    # Dataset-scoped
+    dataset_issues = await client.annotation_issues.list_by_dataset(
+        owner="username",
+        dataset_slug="my-dataset"
+    )
+    
+    metrics = await client.annotation_issues.get_metrics(
+        owner="username",
+        dataset_slug="my-dataset"
+    )
+    
+    # Tools
+    tools = await client.annotation_issues.list_tools(
+        dataset_type="image"
+    )
+```

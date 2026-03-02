@@ -1,0 +1,193 @@
+---
+title: Webhooks
+description: Configure webhooks to receive real-time event notifications
+---
+
+## list
+
+List all webhooks.
+
+```python
+client.webhooks.list(
+    limit=10,
+    cursor="abc123"
+)
+```
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="List[Webhook]">
+  List of webhook objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for the next page, or None if no more results
+</ResponseField>
+
+## get
+
+Retrieve a specific webhook by UID.
+
+```python
+client.webhooks.get("wh_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the webhook
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the webhook
+</ResponseField>
+
+<ResponseField name="target_url" type="str">
+  URL where webhook events will be sent
+</ResponseField>
+
+<ResponseField name="events" type="List[str]">
+  List of event types this webhook subscribes to
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Whether the webhook is currently active
+</ResponseField>
+
+<ResponseField name="created_at" type="str">
+  Timestamp when the webhook was created
+</ResponseField>
+
+## create
+
+Create a new webhook.
+
+```python
+client.webhooks.create(
+    target_url="https://example.com/webhook",
+    events=["dataset.created", "task.completed", "export.finished"],
+    is_active=True,
+    secret="your-webhook-secret"
+)
+```
+
+<ParamField path="target_url" type="str" required>
+  URL where webhook POST requests will be sent
+</ParamField>
+
+<ParamField path="events" type="List[str]" required>
+  List of event types to subscribe to (e.g., "dataset.created", "task.completed", "export.finished")
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether the webhook should be active immediately (default: true)
+</ParamField>
+
+<ParamField path="secret" type="str" optional>
+  Secret key used to sign webhook payloads for verification
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the webhook
+</ResponseField>
+
+<ResponseField name="target_url" type="str">
+  Configured target URL
+</ResponseField>
+
+<ResponseField name="events" type="List[str]">
+  Subscribed event types
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Active status
+</ResponseField>
+
+## update
+
+Update an existing webhook.
+
+```python
+client.webhooks.update(
+    "wh_abc123",
+    target_url="https://example.com/new-webhook",
+    events=["dataset.created", "dataset.updated"],
+    is_active=False
+)
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the webhook to update
+</ParamField>
+
+<ParamField path="target_url" type="str" optional>
+  Updated target URL
+</ParamField>
+
+<ParamField path="events" type="List[str]" optional>
+  Updated list of event types
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Updated active status
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the webhook
+</ResponseField>
+
+<ResponseField name="target_url" type="str">
+  Updated target URL
+</ResponseField>
+
+<ResponseField name="events" type="List[str]">
+  Updated event types
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Updated active status
+</ResponseField>
+
+## delete
+
+Delete a webhook.
+
+```python
+client.webhooks.delete("wh_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the webhook to delete
+</ParamField>
+
+## test
+
+Send a test event to a webhook to verify it's working.
+
+```python
+client.webhooks.test("wh_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the webhook to test
+</ParamField>
+
+<ResponseField name="success" type="bool">
+  Whether the test delivery was successful
+</ResponseField>
+
+<ResponseField name="status_code" type="int">
+  HTTP status code returned by the webhook endpoint
+</ResponseField>
+
+<ResponseField name="response_time_ms" type="float">
+  Response time in milliseconds
+</ResponseField>
+
+<ResponseField name="message" type="str">
+  Test result message or error details
+</ResponseField>

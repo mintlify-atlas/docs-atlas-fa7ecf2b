@@ -1,0 +1,142 @@
+---
+title: AsyncClient
+description: Asynchronous client for the Avala API
+---
+
+## AsyncClient
+
+The asynchronous client for interacting with the Avala API using async/await syntax.
+
+```python
+from avala import AsyncClient
+
+client = AsyncClient(api_key="your-api-key")
+```
+
+### Initialization
+
+<ParamField path="api_key" type="str | None" default="None">
+  Your Avala API key. If not provided, the client will attempt to read from the `AVALA_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str | None" default="None">
+  The base URL for the Avala API. If not provided, uses the default production API endpoint.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="30.0">
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="2">
+  Maximum number of retry attempts for failed requests.
+</ParamField>
+
+### Resource Properties
+
+The client provides access to all API resources through the following properties:
+
+<ResponseField name="agents" type="AsyncAgents">
+  Access to the Agents API resource (async version).
+</ResponseField>
+
+<ResponseField name="annotation_issues" type="AsyncAnnotationIssues">
+  Access to the Annotation Issues API resource (async version).
+</ResponseField>
+
+<ResponseField name="auto_label_jobs" type="AsyncAutoLabelJobs">
+  Access to the Auto Label Jobs API resource (async version).
+</ResponseField>
+
+<ResponseField name="consensus" type="AsyncConsensus">
+  Access to the Consensus API resource (async version).
+</ResponseField>
+
+<ResponseField name="datasets" type="AsyncDatasets">
+  Access to the Datasets API resource (async version).
+</ResponseField>
+
+<ResponseField name="exports" type="AsyncExports">
+  Access to the Exports API resource (async version).
+</ResponseField>
+
+<ResponseField name="fleet" type="AsyncFleet">
+  Access to the Fleet API resource (async version).
+</ResponseField>
+
+<ResponseField name="inference_providers" type="AsyncInferenceProviders">
+  Access to the Inference Providers API resource (async version).
+</ResponseField>
+
+<ResponseField name="organizations" type="AsyncOrganizations">
+  Access to the Organizations API resource (async version).
+</ResponseField>
+
+<ResponseField name="projects" type="AsyncProjects">
+  Access to the Projects API resource (async version).
+</ResponseField>
+
+<ResponseField name="quality_targets" type="AsyncQualityTargets">
+  Access to the Quality Targets API resource (async version).
+</ResponseField>
+
+<ResponseField name="slices" type="AsyncSlices">
+  Access to the Slices API resource (async version).
+</ResponseField>
+
+<ResponseField name="storage_configs" type="AsyncStorageConfigs">
+  Access to the Storage Configs API resource (async version).
+</ResponseField>
+
+<ResponseField name="tasks" type="AsyncTasks">
+  Access to the Tasks API resource (async version).
+</ResponseField>
+
+<ResponseField name="webhooks" type="AsyncWebhooks">
+  Access to the Webhooks API resource (async version).
+</ResponseField>
+
+<ResponseField name="webhook_deliveries" type="AsyncWebhookDeliveries">
+  Access to the Webhook Deliveries API resource (async version).
+</ResponseField>
+
+### Methods
+
+#### rate_limit_info
+
+```python
+@property
+def rate_limit_info(self) -> dict[str, str | None]
+```
+
+Returns rate limit headers from the last API response.
+
+<ResponseField name="rate_limit_info" type="dict[str, str | None]">
+  Dictionary containing rate limit information from the most recent API response.
+</ResponseField>
+
+#### close
+
+```python
+async def close(self) -> None
+```
+
+Closes the HTTP transport and releases resources. Should be called when you're done using the client.
+
+```python
+client = AsyncClient(api_key="your-api-key")
+try:
+    # Use the client
+    datasets = await client.datasets.list()
+finally:
+    await client.close()
+```
+
+### Async Context Manager
+
+The `AsyncClient` can be used as an async context manager, which automatically handles cleanup:
+
+```python
+async with AsyncClient(api_key="your-api-key") as client:
+    datasets = await client.datasets.list()
+    # client.close() is called automatically
+```

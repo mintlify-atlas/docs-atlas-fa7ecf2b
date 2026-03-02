@@ -1,0 +1,343 @@
+---
+title: Fleet Recordings
+description: Access and manage recordings captured by fleet devices
+---
+
+The Recordings resource allows you to retrieve and manage recordings captured by devices in your fleet. Recordings contain sensor data, metadata, and associated events.
+
+## Methods
+
+### list
+
+List recordings with optional filtering.
+
+```python
+recordings = client.fleet.recordings.list(
+    device_id="dev_abc123",
+    status="completed",
+    limit=50,
+    cursor=None
+)
+```
+
+#### Parameters
+
+<ParamField path="device_id" type="string" optional>
+  Filter recordings by device ID
+</ParamField>
+
+<ParamField path="status" type="string" optional>
+  Filter recordings by status (e.g., "recording", "completed", "processing", "archived")
+</ParamField>
+
+<ParamField path="limit" type="integer" optional>
+  Maximum number of recordings to return per page
+</ParamField>
+
+<ParamField path="cursor" type="string" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="list[Recording]">
+  List of recording objects
+  
+  <ResponseField name="uid" type="string">
+    Unique recording identifier
+  </ResponseField>
+  
+  <ResponseField name="device" type="string">
+    ID of the device that created this recording
+  </ResponseField>
+  
+  <ResponseField name="status" type="string">
+    Current recording status
+  </ResponseField>
+  
+  <ResponseField name="duration_seconds" type="float">
+    Recording duration in seconds
+  </ResponseField>
+  
+  <ResponseField name="size_bytes" type="integer">
+    Recording size in bytes
+  </ResponseField>
+  
+  <ResponseField name="topic_count" type="integer">
+    Number of topics in the recording
+  </ResponseField>
+  
+  <ResponseField name="tags" type="list[string]">
+    Tags associated with the recording
+  </ResponseField>
+  
+  <ResponseField name="topics" type="list[dict]">
+    List of topics with metadata (name, message count, etc.)
+  </ResponseField>
+  
+  <ResponseField name="started_at" type="datetime">
+    When the recording started
+  </ResponseField>
+  
+  <ResponseField name="ended_at" type="datetime">
+    When the recording ended
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="datetime">
+    Recording creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="datetime">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results are available
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for fetching the next page
+</ResponseField>
+
+---
+
+### get
+
+Retrieve details for a specific recording.
+
+```python
+recording = client.fleet.recordings.get("rec_def456")
+```
+
+#### Parameters
+
+<ParamField path="recording_id" type="string" required>
+  The unique identifier of the recording
+</ParamField>
+
+#### Returns
+
+Returns a `Recording` object with complete details including topics list.
+
+---
+
+### update
+
+Update a recording's properties.
+
+```python
+recording = client.fleet.recordings.update(
+    "rec_def456",
+    status="archived",
+    tags=["reviewed", "incident", "2024-q1"]
+)
+```
+
+#### Parameters
+
+<ParamField path="recording_id" type="string" required>
+  The unique identifier of the recording to update
+</ParamField>
+
+<ParamField path="status" type="string" optional>
+  Updated status for the recording
+</ParamField>
+
+<ParamField path="tags" type="list[string]" optional>
+  Updated tags (replaces existing tags)
+</ParamField>
+
+#### Returns
+
+Returns the updated `Recording` object.
+
+---
+
+### delete
+
+Permanently delete a recording.
+
+```python
+client.fleet.recordings.delete("rec_def456")
+```
+
+#### Parameters
+
+<ParamField path="recording_id" type="string" required>
+  The unique identifier of the recording to delete
+</ParamField>
+
+#### Returns
+
+Returns `None` on success.
+
+## Example Usage
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all completed recordings from a specific device
+recordings = client.fleet.recordings.list(
+    device_id="dev_vehicle_001",
+    status="completed"
+)
+
+print(f"Found {len(recordings.data)} recordings")
+
+for rec in recordings.data:
+    print(f"\nRecording: {rec.uid}")
+    print(f"  Duration: {rec.duration_seconds:.2f} seconds")
+    print(f"  Size: {rec.size_bytes / (1024**3):.2f} GB")
+    print(f"  Topics: {rec.topic_count}")
+    print(f"  Started: {rec.started_at}")
+    print(f"  Ended: {rec.ended_at}")
+    if rec.tags:
+        print(f"  Tags: {', '.join(rec.tags)}")
+
+# Get detailed information about a specific recording
+recording = client.fleet.recordings.get("rec_def456")
+
+print(f"\nRecording Details:")
+print(f"Device: {recording.device}")
+print(f"Status: {recording.status}")
+
+if recording.topics:
+    print("\nTopics:")
+    for topic in recording.topics:
+        print(f"  - {topic.get('name')}: {topic.get('message_count')} messages")
+
+# Tag recordings for organization
+updated = client.fleet.recordings.update(
+    recording.uid,
+    tags=["reviewed", "training-data", "2024-march"]
+)
+
+print(f"\nUpdated tags: {updated.tags}")
+
+# Archive old recordings
+old_recordings = client.fleet.recordings.list(status="completed")
+
+for rec in old_recordings.data:
+    if rec.created_at and (datetime.now() - rec.created_at).days > 90:
+        client.fleet.recordings.update(
+            rec.uid,
+            status="archived",
+            tags=rec.tags + ["auto-archived"]
+        )
+        print(f"Archived recording {rec.uid}")
+
+# Pagination example
+all_recordings = []
+cursor = None
+
+while True:
+    page = client.fleet.recordings.list(limit=100, cursor=cursor)
+    all_recordings.extend(page.data)
+    
+    if not page.has_more:
+        break
+    cursor = page.next_cursor
+
+print(f"\nTotal recordings: {len(all_recordings)}")
+```
+
+## Async Usage
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def process_recordings():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # List recordings
+    recordings = await client.fleet.recordings.list(
+        device_id="dev_abc123"
+    )
+    
+    # Get recording details in parallel
+    tasks = [
+        client.fleet.recordings.get(rec.uid)
+        for rec in recordings.data
+    ]
+    details = await asyncio.gather(*tasks)
+    
+    # Update recordings in parallel
+    update_tasks = [
+        client.fleet.recordings.update(
+            rec.uid,
+            tags=["processed"]
+        )
+        for rec in recordings.data
+    ]
+    await asyncio.gather(*update_tasks)
+    
+asyncio.run(process_recordings())
+```
+
+## Working with Recording Topics
+
+Recordings contain multiple topics (data streams). Access topic information through the `topics` field:
+
+```python
+recording = client.fleet.recordings.get("rec_def456")
+
+if recording.topics:
+    print(f"Recording has {recording.topic_count} topics:")
+    
+    for topic in recording.topics:
+        name = topic.get('name')
+        msg_count = topic.get('message_count')
+        data_type = topic.get('data_type')
+        
+        print(f"  {name}:")
+        print(f"    Messages: {msg_count}")
+        print(f"    Type: {data_type}")
+```
+
+## Recording Lifecycle
+
+Recordings typically progress through these statuses:
+
+1. **recording**: Currently being recorded by the device
+2. **completed**: Recording finished and uploaded
+3. **processing**: Being processed for analysis
+4. **archived**: Moved to long-term storage
+
+```python
+# Query recordings by lifecycle stage
+active = client.fleet.recordings.list(status="recording")
+completed = client.fleet.recordings.list(status="completed")
+archived = client.fleet.recordings.list(status="archived")
+
+print(f"Active recordings: {len(active.data)}")
+print(f"Completed recordings: {len(completed.data)}")
+print(f"Archived recordings: {len(archived.data)}")
+```
+
+## Organizing with Tags
+
+Use tags to organize and categorize recordings:
+
+```python
+# Tag recordings by purpose
+client.fleet.recordings.update(
+    "rec_123",
+    tags=["training-data", "highway", "weather-rain"]
+)
+
+# Tag recordings by review status
+client.fleet.recordings.update(
+    "rec_456",
+    tags=["reviewed", "approved", "ready-for-export"]
+)
+
+# Tag recordings by incident
+client.fleet.recordings.update(
+    "rec_789",
+    tags=["incident", "near-miss", "requires-review"]
+)
+```

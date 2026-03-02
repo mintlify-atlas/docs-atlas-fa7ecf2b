@@ -1,0 +1,409 @@
+---
+title: Error Handling
+description: Understanding and handling errors in the Avala SDK
+---
+
+The Avala SDK provides a comprehensive error hierarchy defined in `avala/errors.py` to help you handle different types of API errors gracefully.
+
+## Error Hierarchy
+
+All Avala errors inherit from the base `AvalaError` class:
+
+```
+AvalaError (base)
+├── AuthenticationError (401)
+├── NotFoundError (404)
+├── RateLimitError (429)
+├── ValidationError (400, 422)
+└── ServerError (5xx)
+```
+
+## Base Error: AvalaError
+
+The base exception class for all Avala API errors defined in `avala/errors.py:8-15`:
+
+```python
+from avala import AvalaError
+
+try:
+    client.projects.get(id="proj_123")
+except AvalaError as e:
+    print(f"Error: {e.message}")
+    print(f"Status code: {e.status_code}")
+    print(f"Response body: {e.body}")
+```
+
+### Attributes
+
+<ParamField path="message" type="str">
+  A human-readable error message describing what went wrong.
+</ParamField>
+
+<ParamField path="status_code" type="int | None">
+  The HTTP status code from the API response, if available.
+</ParamField>
+
+<ParamField path="body" type="Any">
+  The raw response body from the API, useful for debugging.
+</ParamField>
+
+## Authentication Errors
+
+Raised when API key authentication fails (HTTP 401):
+
+```python
+from avala import Client, AuthenticationError
+
+try:
+    client = Client(api_key="invalid_key")
+    projects = client.projects.list()
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+    # Action: Check your API key or regenerate it
+```
+
+<Note>
+  Common causes: Invalid API key, expired API key, or missing API key. Verify your credentials in the Avala dashboard.
+</Note>
+
+## Not Found Errors
+
+Raised when a requested resource doesn't exist (HTTP 404):
+
+```python
+from avala import Client, NotFoundError
+
+client = Client(api_key="your_api_key")
+
+try:
+    project = client.projects.get(id="proj_nonexistent")
+except NotFoundError as e:
+    print(f"Project not found: {e.message}")
+    # Action: Verify the ID or check if the resource was deleted
+```
+
+<Tip>
+  Always validate resource IDs before making API calls, especially when accepting user input.
+</Tip>
+
+## Rate Limit Errors
+
+Raised when you exceed the API rate limit (HTTP 429) as defined in `avala/errors.py:26-37`:
+
+```python
+from avala import Client, RateLimitError
+import time
+
+client = Client(api_key="your_api_key")
+
+try:
+    for i in range(1000):
+        client.tasks.list(project_id="proj_123")
+except RateLimitError as e:
+    print(f"Rate limit exceeded: {e.message}")
+    print(f"Retry after: {e.retry_after} seconds")
+    
+    if e.retry_after:
+        time.sleep(e.retry_after)
+        # Retry the request
+```
+
+### Additional Attributes
+
+<ParamField path="retry_after" type="float | None">
+  The number of seconds to wait before retrying the request, as suggested by the API.
+</ParamField>
+
+<Warning>
+  Respect the `retry_after` value to avoid being temporarily blocked. Implement exponential backoff for robust retry logic.
+</Warning>
+
+## Validation Errors
+
+Raised when request parameters are invalid (HTTP 400 or 422) as defined in `avala/errors.py:40-51`:
+
+```python
+from avala import Client, ValidationError
+
+client = Client(api_key="your_api_key")
+
+try:
+    project = client.projects.create(
+        name="",  # Invalid: empty name
+        description="Test project"
+    )
+except ValidationError as e:
+    print(f"Validation failed: {e.message}")
+    print(f"Status code: {e.status_code}")
+    
+    # Check detailed validation errors
+    for detail in e.details:
+        print(f"  - {detail}")
+```
+
+### Additional Attributes
+
+<ParamField path="details" type="list[Any]">
+  A list of detailed validation error messages, useful for identifying specific field errors.
+</ParamField>
+
+<Tip>
+  Use the `details` attribute to provide specific feedback to users about which fields need correction.
+</Tip>
+
+## Server Errors
+
+Raised when the server encounters an error (HTTP 5xx):
+
+```python
+from avala import Client, ServerError
+import time
+
+client = Client(api_key="your_api_key")
+
+try:
+    dataset = client.datasets.create(
+        name="Large Dataset",
+        project_id="proj_123"
+    )
+except ServerError as e:
+    print(f"Server error: {e.message}")
+    print(f"Status code: {e.status_code}")
+    # Action: Retry with exponential backoff or contact support
+```
+
+<Note>
+  Server errors are typically temporary. The SDK automatically retries requests with 5xx errors up to `max_retries` times (default: 2).
+</Note>
+
+## Comprehensive Error Handling
+
+Handle multiple error types in a single try-except block:
+
+```python
+from avala import (
+    Client,
+    AuthenticationError,
+    NotFoundError,
+    RateLimitError,
+    ValidationError,
+    ServerError,
+    AvalaError
+)
+
+client = Client(api_key="your_api_key")
+
+try:
+    project = client.projects.get(id="proj_123")
+    tasks = client.tasks.list(project_id=project.id)
+    
+except AuthenticationError as e:
+    print("Authentication failed. Check your API key.")
+    # Redirect to login or refresh credentials
+    
+except NotFoundError as e:
+    print(f"Resource not found: {e.message}")
+    # Show a 404 page or create the resource
+    
+except RateLimitError as e:
+    print(f"Rate limit exceeded. Retry after {e.retry_after}s")
+    # Implement retry logic with backoff
+    
+except ValidationError as e:
+    print(f"Invalid request: {e.message}")
+    for detail in e.details:
+        print(f"  - {detail}")
+    # Show validation errors to the user
+    
+except ServerError as e:
+    print(f"Server error: {e.message}")
+    # Log the error and retry or show a maintenance page
+    
+except AvalaError as e:
+    # Catch any other Avala errors
+    print(f"Unexpected error: {e.message}")
+    # Log and handle gracefully
+```
+
+## Async Error Handling
+
+Error handling works the same way with `AsyncClient`:
+
+```python
+import asyncio
+from avala import AsyncClient, NotFoundError, AvalaError
+
+async def fetch_project(project_id: str):
+    async with AsyncClient(api_key="your_api_key") as client:
+        try:
+            project = await client.projects.get(id=project_id)
+            return project
+        except NotFoundError:
+            print(f"Project {project_id} not found")
+            return None
+        except AvalaError as e:
+            print(f"Error fetching project: {e.message}")
+            raise
+
+project = asyncio.run(fetch_project("proj_123"))
+```
+
+## Retry Logic with Exponential Backoff
+
+Implement robust retry logic for transient errors:
+
+```python
+import time
+from avala import Client, RateLimitError, ServerError, AvalaError
+
+def retry_with_backoff(func, max_attempts=5):
+    """Retry a function with exponential backoff."""
+    for attempt in range(max_attempts):
+        try:
+            return func()
+        except RateLimitError as e:
+            if e.retry_after:
+                wait_time = e.retry_after
+            else:
+                wait_time = 2 ** attempt  # Exponential backoff
+            
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+            
+        except ServerError as e:
+            if attempt == max_attempts - 1:
+                raise
+            
+            wait_time = 2 ** attempt
+            print(f"Server error. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+            
+        except AvalaError:
+            # Don't retry other errors
+            raise
+    
+    raise Exception("Max retry attempts exceeded")
+
+client = Client(api_key="your_api_key")
+
+# Use the retry wrapper
+projects = retry_with_backoff(
+    lambda: client.projects.list()
+)
+```
+
+<Tip>
+  The SDK automatically retries network errors and server errors (5xx) up to `max_retries` times. You only need custom retry logic for rate limiting or specific use cases.
+</Tip>
+
+## Logging Errors
+
+Log errors for debugging and monitoring:
+
+```python
+import logging
+from avala import Client, AvalaError
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+client = Client(api_key="your_api_key")
+
+try:
+    project = client.projects.get(id="proj_123")
+except AvalaError as e:
+    logger.error(
+        "API error occurred",
+        extra={
+            "error_type": type(e).__name__,
+            "message": e.message,
+            "status_code": e.status_code,
+            "body": e.body
+        }
+    )
+    raise
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Catch Specific Errors" icon="filter">
+    Catch specific error types (e.g., `NotFoundError`) before the general `AvalaError` to handle different scenarios appropriately.
+  </Card>
+  
+  <Card title="Use Retry Logic" icon="rotate-right">
+    Implement exponential backoff for `RateLimitError` and `ServerError` to handle transient failures gracefully.
+  </Card>
+  
+  <Card title="Log Error Details" icon="file-lines">
+    Always log error details including `status_code` and `body` for debugging and monitoring.
+  </Card>
+  
+  <Card title="Respect Rate Limits" icon="gauge-high">
+    Use the `retry_after` attribute from `RateLimitError` to avoid being blocked by the API.
+  </Card>
+</CardGroup>
+
+## Error Response Body
+
+The `body` attribute contains the raw API response:
+
+```python
+from avala import Client, ValidationError
+
+client = Client(api_key="your_api_key")
+
+try:
+    project = client.projects.create(name="")
+except ValidationError as e:
+    # The body might contain structured error details
+    print(f"Status: {e.status_code}")
+    print(f"Message: {e.message}")
+    print(f"Body: {e.body}")
+    
+    # Example body structure (varies by endpoint):
+    # {
+    #   "error": "validation_error",
+    #   "message": "Invalid parameters",
+    #   "details": [
+    #     {"field": "name", "message": "Name cannot be empty"}
+    #   ]
+    # }
+```
+
+## Testing Error Handling
+
+Test your error handling logic:
+
+```python
+import pytest
+from avala import Client, NotFoundError
+
+def test_handle_not_found():
+    client = Client(api_key="your_api_key")
+    
+    with pytest.raises(NotFoundError):
+        client.projects.get(id="nonexistent")
+
+def test_graceful_degradation():
+    client = Client(api_key="your_api_key")
+    
+    try:
+        project = client.projects.get(id="proj_123")
+    except NotFoundError:
+        # Fallback behavior
+        project = None
+    
+    assert project is None or project.id == "proj_123"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client" icon="plug" href="/concepts/client">
+    Learn about the synchronous client
+  </Card>
+  <Card title="Pagination" icon="ellipsis" href="/concepts/pagination">
+    Handle paginated API responses
+  </Card>
+</CardGroup>

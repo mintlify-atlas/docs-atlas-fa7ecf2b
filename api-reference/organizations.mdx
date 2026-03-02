@@ -1,0 +1,619 @@
+---
+title: Organizations
+description: Manage organizations, members, teams, and invitations
+---
+
+## Organizations
+
+### list
+
+List all organizations you have access to.
+
+```python
+client.organizations.list(
+    limit=10,
+    cursor="abc123"
+)
+```
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="List[Organization]">
+  List of organization objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for the next page, or None if no more results
+</ResponseField>
+
+### get
+
+Retrieve a specific organization by slug.
+
+```python
+client.organizations.get("acme-corp")
+```
+
+<ParamField path="slug" type="str" required>
+  Unique slug identifier of the organization
+</ParamField>
+
+<ResponseField name="slug" type="str">
+  Unique slug identifier
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Organization name
+</ResponseField>
+
+<ResponseField name="description" type="str">
+  Organization description
+</ResponseField>
+
+<ResponseField name="website" type="str">
+  Organization website URL
+</ResponseField>
+
+<ResponseField name="industry" type="str">
+  Industry category
+</ResponseField>
+
+### create
+
+Create a new organization.
+
+```python
+client.organizations.create(
+    name="Acme Corporation",
+    description="Leading AI solutions provider",
+    website="https://acme.com",
+    industry="technology",
+    email="contact@acme.com",
+    phone="+1-555-0100",
+    visibility="public"
+)
+```
+
+<ParamField path="name" type="str" required>
+  Name of the organization
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Description of the organization
+</ParamField>
+
+<ParamField path="logo" type="str" optional>
+  URL to the organization logo image
+</ParamField>
+
+<ParamField path="website" type="str" optional>
+  Organization website URL
+</ParamField>
+
+<ParamField path="industry" type="str" optional>
+  Industry category (use industry_choices() to see available options)
+</ParamField>
+
+<ParamField path="email" type="str" optional>
+  Organization contact email
+</ParamField>
+
+<ParamField path="phone" type="str" optional>
+  Organization contact phone number
+</ParamField>
+
+<ParamField path="visibility" type="str" optional>
+  Organization visibility ("public" or "private")
+</ParamField>
+
+<ResponseField name="slug" type="str">
+  Generated unique slug identifier
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Organization name
+</ResponseField>
+
+### update
+
+Update an existing organization.
+
+```python
+client.organizations.update(
+    "acme-corp",
+    name="Acme Corporation Inc.",
+    description="Updated description",
+    industry="ai-ml"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Unique slug identifier of the organization to update
+</ParamField>
+
+<ParamField path="name" type="str" optional>
+  Updated organization name
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Updated description
+</ParamField>
+
+<ParamField path="logo" type="str" optional>
+  Updated logo URL
+</ParamField>
+
+<ParamField path="website" type="str" optional>
+  Updated website URL
+</ParamField>
+
+<ParamField path="handle" type="str" optional>
+  Updated handle/slug
+</ParamField>
+
+<ParamField path="industry" type="str" optional>
+  Updated industry category
+</ParamField>
+
+<ParamField path="email" type="str" optional>
+  Updated contact email
+</ParamField>
+
+<ParamField path="phone" type="str" optional>
+  Updated contact phone
+</ParamField>
+
+<ParamField path="visibility" type="str" optional>
+  Updated visibility setting
+</ParamField>
+
+### delete
+
+Delete an organization.
+
+```python
+client.organizations.delete("acme-corp")
+```
+
+<ParamField path="slug" type="str" required>
+  Unique slug identifier of the organization to delete
+</ParamField>
+
+### industry_choices
+
+Get available industry category options.
+
+```python
+client.organizations.industry_choices()
+```
+
+<ResponseField name="choices" type="dict">
+  Dictionary of available industry categories
+</ResponseField>
+
+## Members
+
+### list_members
+
+List members of an organization.
+
+```python
+client.organizations.list_members(
+    "acme-corp",
+    search="john",
+    role="admin",
+    limit=10,
+    cursor="abc123"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="search" type="str" optional>
+  Search query to filter members by name or email
+</ParamField>
+
+<ParamField path="role" type="str" optional>
+  Filter by role (e.g., "admin", "member")
+</ParamField>
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor
+</ParamField>
+
+<ResponseField name="data" type="List[OrganizationMember]">
+  List of organization member objects
+</ResponseField>
+
+### remove_member
+
+Remove a member from the organization.
+
+```python
+client.organizations.remove_member("acme-corp", "user_xyz789")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="user_uid" type="str" required>
+  UID of the user to remove
+</ParamField>
+
+### update_member_role
+
+Update a member's role in the organization.
+
+```python
+client.organizations.update_member_role(
+    "acme-corp",
+    "user_xyz789",
+    role="admin"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="user_uid" type="str" required>
+  UID of the user
+</ParamField>
+
+<ParamField path="role" type="str" required>
+  New role for the member (e.g., "admin", "member")
+</ParamField>
+
+### leave
+
+Leave an organization (current user).
+
+```python
+client.organizations.leave("acme-corp")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug to leave
+</ParamField>
+
+### transfer_ownership
+
+Transfer organization ownership to another member.
+
+```python
+client.organizations.transfer_ownership(
+    "acme-corp",
+    new_owner_uid="user_xyz789"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="new_owner_uid" type="str" required>
+  UID of the user who will become the new owner
+</ParamField>
+
+## Invitations
+
+### list_invitations
+
+List pending invitations for an organization.
+
+```python
+client.organizations.list_invitations("acme-corp")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ResponseField name="invitations" type="List[Invitation]">
+  List of pending invitation objects
+</ResponseField>
+
+### create_invitation
+
+Invite a new member to the organization.
+
+```python
+client.organizations.create_invitation(
+    "acme-corp",
+    email="newuser@example.com",
+    role="member"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="email" type="str" required>
+  Email address of the person to invite
+</ParamField>
+
+<ParamField path="role" type="str" optional>
+  Role to assign (default: "member")
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the invitation
+</ResponseField>
+
+<ResponseField name="email" type="str">
+  Email address invited
+</ResponseField>
+
+<ResponseField name="role" type="str">
+  Assigned role
+</ResponseField>
+
+### resend_invitation
+
+Resend an invitation email.
+
+```python
+client.organizations.resend_invitation("acme-corp", "inv_abc123")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="invitation_uid" type="str" required>
+  UID of the invitation to resend
+</ParamField>
+
+### cancel_invitation
+
+Cancel a pending invitation.
+
+```python
+client.organizations.cancel_invitation("acme-corp", "inv_abc123")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="invitation_uid" type="str" required>
+  UID of the invitation to cancel
+</ParamField>
+
+## Teams
+
+### list_teams
+
+List all teams in an organization.
+
+```python
+client.organizations.list_teams("acme-corp")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ResponseField name="teams" type="List[Team]">
+  List of team objects
+</ResponseField>
+
+### create_team
+
+Create a new team within an organization.
+
+```python
+client.organizations.create_team(
+    "acme-corp",
+    name="Engineering",
+    description="Engineering team",
+    color="#3B82F6"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="name" type="str" required>
+  Name for the team
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Team description
+</ParamField>
+
+<ParamField path="color" type="str" optional>
+  Hex color code for the team (e.g., "#3B82F6")
+</ParamField>
+
+<ResponseField name="slug" type="str">
+  Generated team slug
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Team name
+</ResponseField>
+
+### get_team
+
+Retrieve a specific team.
+
+```python
+client.organizations.get_team("acme-corp", "engineering")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug
+</ParamField>
+
+### update_team
+
+Update a team's information.
+
+```python
+client.organizations.update_team(
+    "acme-corp",
+    "engineering",
+    name="Platform Engineering",
+    description="Updated description"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug to update
+</ParamField>
+
+<ParamField path="name" type="str" optional>
+  Updated team name
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Updated description
+</ParamField>
+
+<ParamField path="color" type="str" optional>
+  Updated color
+</ParamField>
+
+### delete_team
+
+Delete a team.
+
+```python
+client.organizations.delete_team("acme-corp", "engineering")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug to delete
+</ParamField>
+
+## Team Members
+
+### list_team_members
+
+List members of a team.
+
+```python
+client.organizations.list_team_members("acme-corp", "engineering")
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug
+</ParamField>
+
+<ResponseField name="members" type="List[TeamMember]">
+  List of team member objects
+</ResponseField>
+
+### add_team_member
+
+Add a member to a team.
+
+```python
+client.organizations.add_team_member(
+    "acme-corp",
+    "engineering",
+    user_uid="user_xyz789",
+    role="member"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug
+</ParamField>
+
+<ParamField path="user_uid" type="str" required>
+  UID of the user to add
+</ParamField>
+
+<ParamField path="role" type="str" optional>
+  Role within the team (default: "member")
+</ParamField>
+
+### remove_team_member
+
+Remove a member from a team.
+
+```python
+client.organizations.remove_team_member(
+    "acme-corp",
+    "engineering",
+    "user_xyz789"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug
+</ParamField>
+
+<ParamField path="user_uid" type="str" required>
+  UID of the user to remove
+</ParamField>
+
+### update_team_member_role
+
+Update a team member's role.
+
+```python
+client.organizations.update_team_member_role(
+    "acme-corp",
+    "engineering",
+    "user_xyz789",
+    role="lead"
+)
+```
+
+<ParamField path="slug" type="str" required>
+  Organization slug
+</ParamField>
+
+<ParamField path="team_slug" type="str" required>
+  Team slug
+</ParamField>
+
+<ParamField path="user_uid" type="str" required>
+  UID of the user
+</ParamField>
+
+<ParamField path="role" type="str" required>
+  New role for the team member
+</ParamField>

@@ -1,0 +1,245 @@
+---
+title: Agents
+description: Manage automation agents that respond to labeling events
+---
+
+Agents are automation workflows that trigger callbacks when specific labeling events occur. They can monitor task completion, quality changes, and other project events.
+
+## Methods
+
+### list
+
+List all agents.
+
+```python
+client.agents.list(
+    limit=100,
+    cursor="next_page_token"
+)
+```
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of agents to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="list[Agent]">
+  List of agent objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str">
+  Cursor for the next page of results
+</ResponseField>
+
+### get
+
+Retrieve a specific agent by UID.
+
+```python
+client.agents.get(uid="agent_123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the agent
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier of the agent
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Name of the agent
+</ResponseField>
+
+<ResponseField name="events" type="list[str]">
+  List of events that trigger this agent
+</ResponseField>
+
+<ResponseField name="description" type="str">
+  Description of the agent's purpose
+</ResponseField>
+
+<ResponseField name="callback_url" type="str">
+  URL to call when events are triggered
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Whether the agent is currently active
+</ResponseField>
+
+<ResponseField name="project" type="str">
+  Project UID this agent is associated with
+</ResponseField>
+
+<ResponseField name="task_types" type="list[str]">
+  Types of tasks this agent monitors
+</ResponseField>
+
+### create
+
+Create a new agent.
+
+```python
+client.agents.create(
+    name="Quality Monitor",
+    events=["task.completed", "task.reviewed"],
+    description="Monitor task completion and quality",
+    callback_url="https://api.example.com/webhook",
+    is_active=True,
+    project="proj_123",
+    task_types=["classification", "segmentation"]
+)
+```
+
+<ParamField path="name" type="str" required>
+  Name of the agent
+</ParamField>
+
+<ParamField path="events" type="list[str]" optional>
+  List of events that trigger this agent (e.g., "task.completed", "task.reviewed")
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Description of the agent's purpose
+</ParamField>
+
+<ParamField path="callback_url" type="str" optional>
+  URL to call when events are triggered
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether the agent should be active immediately (default: true)
+</ParamField>
+
+<ParamField path="project" type="str" optional>
+  Project UID to associate this agent with
+</ParamField>
+
+<ParamField path="task_types" type="list[str]" optional>
+  Types of tasks this agent should monitor
+</ParamField>
+
+### update
+
+Update an existing agent.
+
+```python
+client.agents.update(
+    uid="agent_123",
+    name="Updated Quality Monitor",
+    is_active=False
+)
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the agent to update
+</ParamField>
+
+<ParamField path="name" type="str" optional>
+  New name for the agent
+</ParamField>
+
+<ParamField path="events" type="list[str]" optional>
+  Updated list of events that trigger this agent
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Updated description
+</ParamField>
+
+<ParamField path="callback_url" type="str" optional>
+  Updated callback URL
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether the agent should be active
+</ParamField>
+
+<ParamField path="project" type="str" optional>
+  Updated project UID
+</ParamField>
+
+<ParamField path="task_types" type="list[str]" optional>
+  Updated task types to monitor
+</ParamField>
+
+### delete
+
+Delete an agent.
+
+```python
+client.agents.delete(uid="agent_123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the agent to delete
+</ParamField>
+
+### list_executions
+
+List execution history for an agent.
+
+```python
+client.agents.list_executions(
+    uid="agent_123",
+    limit=50,
+    cursor="next_page_token"
+)
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the agent
+</ParamField>
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of executions to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="list[AgentExecution]">
+  List of agent execution records
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str">
+  Cursor for the next page of results
+</ResponseField>
+
+### test
+
+Test an agent by triggering a test execution.
+
+```python
+client.agents.test(uid="agent_123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the agent to test
+</ParamField>
+
+<ResponseField name="status" type="str">
+  Status of the test execution
+</ResponseField>
+
+<ResponseField name="response" type="dict">
+  Response from the callback URL
+</ResponseField>
+
+## Async Methods
+
+All methods are available in async form through `AsyncAvala`:
+
+```python
+await client.agents.list()
+await client.agents.get(uid="agent_123")
+await client.agents.create(name="Quality Monitor")
+await client.agents.update(uid="agent_123", is_active=False)
+await client.agents.delete(uid="agent_123")
+await client.agents.list_executions(uid="agent_123")
+await client.agents.test(uid="agent_123")
+```

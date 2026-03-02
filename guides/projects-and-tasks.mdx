@@ -1,0 +1,325 @@
+---
+title: Projects and Tasks
+description: Browse projects and filter tasks using the Avala Python SDK
+---
+
+Projects organize labeling work, and tasks represent individual annotation assignments. Use the Avala SDK to browse projects and filter tasks by status or project.
+
+## Working with Projects
+
+### Listing Projects
+
+Retrieve all projects accessible to your account:
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all projects
+projects = client.projects.list()
+
+for project in projects:
+    print(f"{project.name} ({project.uid})")
+```
+
+### Pagination
+
+```python
+# Get first page with custom limit
+page = client.projects.list(limit=25)
+
+for project in page:
+    print(f"Project: {project.name}")
+
+# Get next page
+if page.has_next:
+    next_page = client.projects.list(
+        cursor=page.next_cursor,
+        limit=25
+    )
+```
+
+### Getting a Specific Project
+
+Retrieve detailed information about a project:
+
+```python
+project = client.projects.get("proj_abc123")
+
+print(f"Name: {project.name}")
+print(f"Description: {project.description}")
+print(f"Status: {project.status}")
+print(f"Created: {project.created_at}")
+```
+
+## Working with Tasks
+
+Tasks represent individual annotation assignments within projects.
+
+### Listing All Tasks
+
+```python
+# List all tasks
+tasks = client.tasks.list()
+
+for task in tasks:
+    print(f"Task {task.uid}: {task.status}")
+```
+
+### Filter by Project
+
+Retrieve tasks for a specific project:
+
+```python
+# Get all tasks in a project
+tasks = client.tasks.list(project="proj_abc123")
+
+for task in tasks:
+    print(f"Task {task.uid} - Status: {task.status}")
+```
+
+### Filter by Status
+
+Filter tasks by their completion status:
+
+```python
+# Get pending tasks
+pending_tasks = client.tasks.list(status="pending")
+
+# Get completed tasks
+completed_tasks = client.tasks.list(status="completed")
+
+# Get in-progress tasks
+in_progress_tasks = client.tasks.list(status="in_progress")
+```
+
+### Combine Filters
+
+Use multiple filters together:
+
+```python
+# Get pending tasks for a specific project
+tasks = client.tasks.list(
+    project="proj_abc123",
+    status="pending"
+)
+
+print(f"Found {len(list(tasks))} pending tasks")
+```
+
+### Pagination for Tasks
+
+```python
+# Get tasks with pagination
+page = client.tasks.list(
+    project="proj_abc123",
+    limit=50
+)
+
+# Process all tasks across pages
+while True:
+    for task in page:
+        process_task(task)
+    
+    if not page.has_next:
+        break
+    
+    page = client.tasks.list(
+        project="proj_abc123",
+        cursor=page.next_cursor,
+        limit=50
+    )
+```
+
+### Getting a Specific Task
+
+```python
+task = client.tasks.get("task_xyz789")
+
+print(f"Status: {task.status}")
+print(f"Assignee: {task.assignee}")
+print(f"Data: {task.data}")
+print(f"Annotations: {task.annotations}")
+```
+
+## Common Use Cases
+
+### Monitor Project Progress
+
+<Steps>
+  <Step title="Get project details">
+    ```python
+    project = client.projects.get("proj_abc123")
+    print(f"Project: {project.name}")
+    ```
+  </Step>
+
+  <Step title="Count tasks by status">
+    ```python
+    pending = client.tasks.list(project=project.uid, status="pending")
+    in_progress = client.tasks.list(project=project.uid, status="in_progress")
+    completed = client.tasks.list(project=project.uid, status="completed")
+
+    print(f"Pending: {len(list(pending))}")
+    print(f"In Progress: {len(list(in_progress))}")
+    print(f"Completed: {len(list(completed))}")
+    ```
+  </Step>
+
+  <Step title="Calculate completion rate">
+    ```python
+    total_tasks = client.tasks.list(project=project.uid)
+    completed_tasks = client.tasks.list(
+        project=project.uid,
+        status="completed"
+    )
+
+    total = len(list(total_tasks))
+    completed = len(list(completed_tasks))
+    
+    if total > 0:
+        completion_rate = (completed / total) * 100
+        print(f"Completion: {completion_rate:.1f}%")
+    ```
+  </Step>
+</Steps>
+
+### Find Overdue Tasks
+
+```python
+from datetime import datetime, timedelta
+
+# Get all in-progress tasks
+tasks = client.tasks.list(status="in_progress")
+
+# Find tasks older than 7 days
+cutoff_date = datetime.now() - timedelta(days=7)
+
+overdue_tasks = [
+    task for task in tasks
+    if task.updated_at < cutoff_date
+]
+
+print(f"Found {len(overdue_tasks)} overdue tasks")
+```
+
+### Export Project Tasks
+
+```python
+import csv
+
+# Get all tasks for a project
+tasks = client.tasks.list(project="proj_abc123")
+
+# Export to CSV
+with open("project_tasks.csv", "w", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(["UID", "Status", "Assignee", "Created", "Updated"])
+    
+    for task in tasks:
+        writer.writerow([
+            task.uid,
+            task.status,
+            task.assignee,
+            task.created_at,
+            task.updated_at
+        ])
+
+print("Tasks exported to project_tasks.csv")
+```
+
+## Complete Example
+
+<Tabs>
+  <Tab title="Synchronous">
+    ```python
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    # Browse all projects
+    print("Available Projects:")
+    projects = client.projects.list()
+    
+    for project in projects:
+        print(f"\n{project.name} ({project.uid})")
+        
+        # Count tasks by status
+        all_tasks = client.tasks.list(project=project.uid)
+        pending = client.tasks.list(
+            project=project.uid,
+            status="pending"
+        )
+        completed = client.tasks.list(
+            project=project.uid,
+            status="completed"
+        )
+        
+        print(f"  Total tasks: {len(list(all_tasks))}")
+        print(f"  Pending: {len(list(pending))}")
+        print(f"  Completed: {len(list(completed))}")
+    ```
+  </Tab>
+
+  <Tab title="Async">
+    ```python
+    import asyncio
+    from avala import AsyncAvala
+
+    async def main():
+        client = AsyncAvala(api_key="your-api-key")
+
+        # Browse all projects
+        print("Available Projects:")
+        projects = await client.projects.list()
+        
+        for project in projects:
+            print(f"\n{project.name} ({project.uid})")
+            
+            # Count tasks by status
+            all_tasks = await client.tasks.list(project=project.uid)
+            pending = await client.tasks.list(
+                project=project.uid,
+                status="pending"
+            )
+            completed = await client.tasks.list(
+                project=project.uid,
+                status="completed"
+            )
+            
+            print(f"  Total tasks: {len(list(all_tasks))}")
+            print(f"  Pending: {len(list(pending))}")
+            print(f"  Completed: {len(list(completed))}")
+
+    asyncio.run(main())
+    ```
+  </Tab>
+</Tabs>
+
+## Task Status Values
+
+Common task status values:
+
+- `pending`: Task is waiting to be started
+- `in_progress`: Task is currently being worked on
+- `completed`: Task has been finished
+- `reviewed`: Task has been reviewed and approved
+- `rejected`: Task was rejected and needs rework
+
+<Note>
+The exact status values may vary based on your project configuration.
+</Note>
+
+## Best Practices
+
+<Tip>
+- Use pagination when working with projects or tasks that have many results
+- Filter tasks by project and status to reduce API calls
+- Cache project metadata to avoid repeated requests
+- Use async methods for concurrent operations across multiple projects
+</Tip>
+
+<Warning>
+Task UIDs are unique across all projects, but always filter by project when possible for better performance.
+</Warning>

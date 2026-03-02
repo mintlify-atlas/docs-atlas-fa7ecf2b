@@ -1,0 +1,488 @@
+---
+title: Webhooks
+description: Receive real-time event notifications using webhooks with the Avala Python SDK
+---
+
+Webhooks allow you to receive real-time HTTP notifications when events occur in your Avala workspace. Use webhooks to integrate Avala with your application, trigger workflows, or synchronize data.
+
+## Creating a Webhook
+
+### Basic Webhook
+
+Create a webhook that listens to specific events:
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+webhook = client.webhooks.create(
+    target_url="https://api.example.com/webhooks/avala",
+    events=["task.completed", "task.reviewed"]
+)
+
+print(f"Webhook created: {webhook.uid}")
+print(f"Target: {webhook.target_url}")
+```
+
+### Webhook with Secret
+
+Add a secret for signature verification:
+
+```python
+webhook = client.webhooks.create(
+    target_url="https://api.example.com/webhooks/avala",
+    events=["task.completed", "export.completed"],
+    secret="your-webhook-secret-key",
+    is_active=True
+)
+
+print(f"Webhook UID: {webhook.uid}")
+```
+
+<Tip>
+Use a strong, randomly generated secret to verify webhook authenticity and prevent unauthorized requests.
+</Tip>
+
+### Webhook Parameters
+
+- `target_url` (required): HTTPS endpoint to receive webhook events
+- `events` (required): List of event types to subscribe to
+- `is_active`: Enable or disable the webhook (default: `True`)
+- `secret`: Secret key for HMAC signature verification
+
+## Webhook Events
+
+Subscribe to these event types:
+
+### Task Events
+
+- `task.created`: New task was created
+- `task.updated`: Task was modified
+- `task.completed`: Task was marked complete
+- `task.reviewed`: Task passed review
+- `task.rejected`: Task was rejected
+- `task.deleted`: Task was deleted
+
+### Project Events
+
+- `project.created`: New project was created
+- `project.updated`: Project settings changed
+- `project.deleted`: Project was deleted
+
+### Dataset Events
+
+- `dataset.created`: New dataset was created
+- `dataset.updated`: Dataset was modified
+- `dataset.deleted`: Dataset was deleted
+
+### Export Events
+
+- `export.created`: Export was initiated
+- `export.completed`: Export is ready for download
+- `export.failed`: Export encountered an error
+
+### Example: Multiple Events
+
+```python
+webhook = client.webhooks.create(
+    target_url="https://api.example.com/webhooks",
+    events=[
+        "task.completed",
+        "task.reviewed",
+        "export.completed",
+        "dataset.updated"
+    ],
+    secret="webhook-secret-123"
+)
+```
+
+## Managing Webhooks
+
+### Listing Webhooks
+
+```python
+# List all webhooks
+webhooks = client.webhooks.list()
+
+for webhook in webhooks:
+    print(f"{webhook.uid}: {webhook.target_url}")
+    print(f"  Events: {', '.join(webhook.events)}")
+    print(f"  Active: {webhook.is_active}")
+```
+
+### Getting a Webhook
+
+```python
+webhook = client.webhooks.get("wh_abc123")
+
+print(f"URL: {webhook.target_url}")
+print(f"Events: {webhook.events}")
+print(f"Active: {webhook.is_active}")
+print(f"Created: {webhook.created_at}")
+```
+
+### Updating a Webhook
+
+Modify webhook configuration:
+
+```python
+# Update target URL
+webhook = client.webhooks.update(
+    "wh_abc123",
+    target_url="https://api.example.com/new-endpoint"
+)
+```
+
+```python
+# Add more events
+webhook = client.webhooks.update(
+    "wh_abc123",
+    events=["task.completed", "task.reviewed", "task.rejected"]
+)
+```
+
+```python
+# Disable webhook
+webhook = client.webhooks.update(
+    "wh_abc123",
+    is_active=False
+)
+```
+
+### Deleting a Webhook
+
+```python
+# Delete a webhook
+client.webhooks.delete("wh_abc123")
+print("Webhook deleted")
+```
+
+## Testing Webhooks
+
+Send a test event to verify your webhook endpoint:
+
+```python
+# Send test event
+result = client.webhooks.test("wh_abc123")
+
+if result.get("success"):
+    print("Test event sent successfully")
+    print(f"Response: {result.get('response')}")
+else:
+    print(f"Test failed: {result.get('error')}")
+```
+
+<Note>
+The test event contains sample data and may not match your production event schema exactly.
+</Note>
+
+## Webhook Deliveries
+
+View the history of webhook deliveries to debug issues:
+
+### Listing Deliveries
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List recent webhook deliveries
+deliveries = client.webhook_deliveries.list(limit=50)
+
+for delivery in deliveries:
+    print(f"Delivery {delivery.uid}:")
+    print(f"  Webhook: {delivery.webhook_uid}")
+    print(f"  Event: {delivery.event_type}")
+    print(f"  Status: {delivery.status}")
+    print(f"  Sent at: {delivery.created_at}")
+```
+
+### Getting Delivery Details
+
+```python
+# Get specific delivery
+delivery = client.webhook_deliveries.get("whd_xyz789")
+
+print(f"Event Type: {delivery.event_type}")
+print(f"Status Code: {delivery.response_status_code}")
+print(f"Response Body: {delivery.response_body}")
+print(f"Attempt Count: {delivery.attempt_count}")
+```
+
+### Filter Deliveries
+
+```python
+# Paginate through deliveries
+page = client.webhook_deliveries.list(limit=100)
+
+# Find failed deliveries
+failed_deliveries = [
+    d for d in page
+    if d.status == "failed"
+]
+
+for delivery in failed_deliveries:
+    print(f"Failed delivery: {delivery.uid}")
+    print(f"  Error: {delivery.error_message}")
+```
+
+## Receiving Webhook Events
+
+### Flask Example
+
+```python
+import hmac
+import hashlib
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+WEBHOOK_SECRET = "your-webhook-secret-key"
+
+@app.route("/webhooks/avala", methods=["POST"])
+def handle_webhook():
+    # Verify signature
+    signature = request.headers.get("X-Avala-Signature")
+    body = request.get_data()
+    
+    expected_signature = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    if not hmac.compare_digest(signature, expected_signature):
+        return jsonify({"error": "Invalid signature"}), 401
+    
+    # Process event
+    event = request.json
+    event_type = event.get("type")
+    
+    if event_type == "task.completed":
+        handle_task_completed(event["data"])
+    elif event_type == "export.completed":
+        handle_export_completed(event["data"])
+    
+    return jsonify({"success": True}), 200
+
+def handle_task_completed(task_data):
+    print(f"Task completed: {task_data['uid']}")
+    # Your custom logic here
+
+def handle_export_completed(export_data):
+    print(f"Export ready: {export_data['download_url']}")
+    # Your custom logic here
+
+if __name__ == "__main__":
+    app.run(port=5000)
+```
+
+### FastAPI Example
+
+```python
+import hmac
+import hashlib
+from fastapi import FastAPI, Request, HTTPException, Header
+
+app = FastAPI()
+WEBHOOK_SECRET = "your-webhook-secret-key"
+
+@app.post("/webhooks/avala")
+async def handle_webhook(
+    request: Request,
+    x_avala_signature: str = Header(None)
+):
+    # Read request body
+    body = await request.body()
+    
+    # Verify signature
+    expected_signature = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    if not hmac.compare_digest(x_avala_signature or "", expected_signature):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    # Process event
+    event = await request.json()
+    event_type = event.get("type")
+    
+    if event_type == "task.completed":
+        await handle_task_completed(event["data"])
+    elif event_type == "export.completed":
+        await handle_export_completed(event["data"])
+    
+    return {"success": True}
+
+async def handle_task_completed(task_data):
+    print(f"Task completed: {task_data['uid']}")
+    # Your custom logic here
+
+async def handle_export_completed(export_data):
+    print(f"Export ready: {export_data['download_url']}")
+    # Your custom logic here
+```
+
+## Webhook Payload Structure
+
+Webhooks send JSON payloads with this structure:
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "task.completed",
+  "created_at": "2026-03-02T10:30:00Z",
+  "data": {
+    "uid": "task_xyz789",
+    "status": "completed",
+    "project_uid": "proj_abc123",
+    "assignee": "user@example.com",
+    "completed_at": "2026-03-02T10:29:55Z"
+  }
+}
+```
+
+## Complete Example
+
+<Tabs>
+  <Tab title="Setup">
+    ```python
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    # Create webhook for task events
+    webhook = client.webhooks.create(
+        target_url="https://api.example.com/webhooks/avala",
+        events=[
+            "task.completed",
+            "task.reviewed",
+            "task.rejected"
+        ],
+        secret="super-secret-webhook-key",
+        is_active=True
+    )
+
+    print(f"Webhook created: {webhook.uid}")
+
+    # Test the webhook
+    result = client.webhooks.test(webhook.uid)
+    
+    if result.get("success"):
+        print("Webhook test successful!")
+    else:
+        print(f"Test failed: {result.get('error')}")
+
+    # List recent deliveries
+    deliveries = client.webhook_deliveries.list(limit=10)
+    
+    for delivery in deliveries:
+        print(f"Delivery: {delivery.event_type} - {delivery.status}")
+    ```
+  </Tab>
+
+  <Tab title="Monitor">
+    ```python
+    from avala import Avala
+    import time
+
+    client = Avala(api_key="your-api-key")
+
+    def monitor_webhook_health(webhook_uid: str):
+        """Monitor webhook delivery success rate."""
+        deliveries = client.webhook_deliveries.list(limit=100)
+        
+        webhook_deliveries = [
+            d for d in deliveries
+            if d.webhook_uid == webhook_uid
+        ]
+        
+        if not webhook_deliveries:
+            print("No deliveries found")
+            return
+        
+        total = len(webhook_deliveries)
+        successful = sum(
+            1 for d in webhook_deliveries
+            if d.status == "success"
+        )
+        failed = total - successful
+        
+        success_rate = (successful / total) * 100
+        
+        print(f"Webhook Health Report:")
+        print(f"  Total deliveries: {total}")
+        print(f"  Successful: {successful}")
+        print(f"  Failed: {failed}")
+        print(f"  Success rate: {success_rate:.1f}%")
+        
+        if failed > 0:
+            print(f"\nRecent failures:")
+            for delivery in webhook_deliveries:
+                if delivery.status == "failed":
+                    print(f"  {delivery.event_type}: {delivery.error_message}")
+
+    # Monitor webhook
+    monitor_webhook_health("wh_abc123")
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<Tip>
+- Always use HTTPS endpoints for webhook URLs
+- Implement signature verification to prevent unauthorized requests
+- Return a 2xx status code quickly to acknowledge receipt
+- Process webhook events asynchronously to avoid timeouts
+- Log webhook deliveries for debugging and auditing
+- Implement retry logic for failed event processing
+- Use webhook deliveries API to debug issues
+</Tip>
+
+## Retry Behavior
+
+Avala automatically retries failed webhook deliveries:
+
+- Initial delivery attempt
+- Retry after 1 minute
+- Retry after 5 minutes
+- Retry after 15 minutes
+- Retry after 1 hour
+
+<Warning>
+Webhooks that consistently fail after all retries may be automatically disabled. Monitor webhook deliveries regularly.
+</Warning>
+
+## Security Considerations
+
+### Verify Webhook Signatures
+
+Always verify the `X-Avala-Signature` header:
+
+```python
+import hmac
+import hashlib
+
+def verify_webhook_signature(payload_body: bytes, signature: str, secret: str) -> bool:
+    expected_signature = hmac.new(
+        secret.encode(),
+        payload_body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(signature, expected_signature)
+```
+
+### Whitelist IP Addresses
+
+If possible, restrict webhook endpoints to Avala's IP ranges.
+
+### Use HTTPS Only
+
+<Warning>
+Never use HTTP for webhook URLs. Avala requires HTTPS endpoints to protect your data in transit.
+</Warning>

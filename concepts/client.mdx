@@ -1,0 +1,211 @@
+---
+title: Client
+description: The synchronous Client class for the Avala API
+---
+
+The `Client` class provides synchronous access to all Avala API resources. It handles authentication, rate limiting, retries, and connection management.
+
+## Initialization
+
+Create a client instance with your API key:
+
+```python
+from avala import Client
+
+client = Client(api_key="your_api_key")
+```
+
+### Parameters
+
+<ParamField path="api_key" type="str | None" default="None">
+  Your Avala API key. If not provided, the SDK will attempt to read from the `AVALA_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str | None" default="None">
+  Override the default API base URL. Useful for testing or using a different API environment.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="30.0">
+  Request timeout in seconds. Controls how long to wait for a response before raising a timeout error.
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="2">
+  Maximum number of retry attempts for failed requests. The SDK automatically retries on network errors and 5xx server errors.
+</ParamField>
+
+## Context Manager
+
+The recommended way to use the client is as a context manager, which ensures proper cleanup:
+
+```python
+from avala import Client
+
+with Client(api_key="your_api_key") as client:
+    projects = client.projects.list()
+    for project in projects:
+        print(project.name)
+```
+
+<Tip>
+  Using the context manager automatically calls `client.close()` when the block exits, ensuring all network connections are properly closed.
+</Tip>
+
+## Manual Cleanup
+
+If you're not using a context manager, make sure to call `close()` when done:
+
+```python
+client = Client(api_key="your_api_key")
+try:
+    projects = client.projects.list()
+finally:
+    client.close()
+```
+
+## Resource Access
+
+The client provides access to all API resources through dedicated properties defined in `avala/_client.py:42-57`:
+
+<CodeGroup>
+```python Data Resources
+# Datasets
+datasets = client.datasets.list()
+
+# Tasks
+tasks = client.tasks.list(project_id="proj_123")
+
+# Annotation Issues
+issues = client.annotation_issues.list(task_id="task_456")
+```
+
+```python Project Management
+# Projects
+project = client.projects.create(name="New Project")
+
+# Slices
+slice = client.slices.create(
+    project_id="proj_123",
+    name="Training Set"
+)
+```
+
+```python AI & Automation
+# Agents
+agent = client.agents.create(
+    name="Label Assistant",
+    model="gpt-4"
+)
+
+# Auto-label Jobs
+job = client.auto_label_jobs.create(
+    project_id="proj_123",
+    agent_id="agent_789"
+)
+
+# Inference Providers
+providers = client.inference_providers.list()
+```
+
+```python Quality & Consensus
+# Quality Targets
+target = client.quality_targets.create(
+    project_id="proj_123",
+    target_accuracy=0.95
+)
+
+# Consensus
+consensus = client.consensus.get(
+    project_id="proj_123",
+    task_id="task_456"
+)
+```
+
+```python Export & Storage
+# Exports
+export = client.exports.create(
+    project_id="proj_123",
+    format="coco"
+)
+
+# Storage Configs
+config = client.storage_configs.create(
+    name="S3 Bucket",
+    provider="s3"
+)
+```
+
+```python Organization & Webhooks
+# Organizations
+org = client.organizations.get()
+
+# Fleet Management
+fleet = client.fleet.list()
+
+# Webhooks
+webhook = client.webhooks.create(
+    url="https://example.com/webhook",
+    events=["task.completed"]
+)
+
+# Webhook Deliveries
+deliveries = client.webhook_deliveries.list(
+    webhook_id="webhook_123"
+)
+```
+</CodeGroup>
+
+## Available Resources
+
+All resources are initialized when the client is created:
+
+- `agents` - AI agent management
+- `annotation_issues` - Annotation quality issues
+- `auto_label_jobs` - Automated labeling jobs
+- `consensus` - Consensus annotation tracking
+- `datasets` - Dataset management
+- `exports` - Data export operations
+- `fleet` - Fleet management
+- `inference_providers` - AI model provider configuration
+- `organizations` - Organization settings
+- `projects` - Project management
+- `quality_targets` - Quality metrics and targets
+- `slices` - Dataset slicing and filtering
+- `storage_configs` - Storage configuration
+- `tasks` - Task management
+- `webhooks` - Webhook configuration
+- `webhook_deliveries` - Webhook delivery logs
+
+## Rate Limit Information
+
+Access rate limit information from the last API response:
+
+```python
+client = Client(api_key="your_api_key")
+projects = client.projects.list()
+
+rate_limits = client.rate_limit_info
+print(f"Limit: {rate_limits.get('x-ratelimit-limit')}")
+print(f"Remaining: {rate_limits.get('x-ratelimit-remaining')}")
+print(f"Reset: {rate_limits.get('x-ratelimit-reset')}")
+```
+
+<Note>
+  The `rate_limit_info` property returns a dictionary containing rate limit headers from the most recent API response. It may be empty if no requests have been made yet.
+</Note>
+
+## Thread Safety
+
+<Warning>
+  The `Client` is not thread-safe. Create a separate client instance for each thread, or use proper synchronization mechanisms when sharing a client across threads.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AsyncClient" icon="bolt" href="/concepts/async-client">
+    Learn about the async client for concurrent operations
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/concepts/error-handling">
+    Handle API errors gracefully
+  </Card>
+</CardGroup>

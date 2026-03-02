@@ -1,0 +1,142 @@
+---
+title: Client
+description: Synchronous client for the Avala API
+---
+
+## Client
+
+The synchronous client for interacting with the Avala API.
+
+```python
+from avala import Client
+
+client = Client(api_key="your-api-key")
+```
+
+### Initialization
+
+<ParamField path="api_key" type="str | None" default="None">
+  Your Avala API key. If not provided, the client will attempt to read from the `AVALA_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str | None" default="None">
+  The base URL for the Avala API. If not provided, uses the default production API endpoint.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="30.0">
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="2">
+  Maximum number of retry attempts for failed requests.
+</ParamField>
+
+### Resource Properties
+
+The client provides access to all API resources through the following properties:
+
+<ResponseField name="agents" type="Agents">
+  Access to the Agents API resource.
+</ResponseField>
+
+<ResponseField name="annotation_issues" type="AnnotationIssues">
+  Access to the Annotation Issues API resource.
+</ResponseField>
+
+<ResponseField name="auto_label_jobs" type="AutoLabelJobs">
+  Access to the Auto Label Jobs API resource.
+</ResponseField>
+
+<ResponseField name="consensus" type="Consensus">
+  Access to the Consensus API resource.
+</ResponseField>
+
+<ResponseField name="datasets" type="Datasets">
+  Access to the Datasets API resource.
+</ResponseField>
+
+<ResponseField name="exports" type="Exports">
+  Access to the Exports API resource.
+</ResponseField>
+
+<ResponseField name="fleet" type="Fleet">
+  Access to the Fleet API resource.
+</ResponseField>
+
+<ResponseField name="inference_providers" type="InferenceProviders">
+  Access to the Inference Providers API resource.
+</ResponseField>
+
+<ResponseField name="organizations" type="Organizations">
+  Access to the Organizations API resource.
+</ResponseField>
+
+<ResponseField name="projects" type="Projects">
+  Access to the Projects API resource.
+</ResponseField>
+
+<ResponseField name="quality_targets" type="QualityTargets">
+  Access to the Quality Targets API resource.
+</ResponseField>
+
+<ResponseField name="slices" type="Slices">
+  Access to the Slices API resource.
+</ResponseField>
+
+<ResponseField name="storage_configs" type="StorageConfigs">
+  Access to the Storage Configs API resource.
+</ResponseField>
+
+<ResponseField name="tasks" type="Tasks">
+  Access to the Tasks API resource.
+</ResponseField>
+
+<ResponseField name="webhooks" type="Webhooks">
+  Access to the Webhooks API resource.
+</ResponseField>
+
+<ResponseField name="webhook_deliveries" type="WebhookDeliveries">
+  Access to the Webhook Deliveries API resource.
+</ResponseField>
+
+### Methods
+
+#### rate_limit_info
+
+```python
+@property
+def rate_limit_info(self) -> dict[str, str | None]
+```
+
+Returns rate limit headers from the last API response.
+
+<ResponseField name="rate_limit_info" type="dict[str, str | None]">
+  Dictionary containing rate limit information from the most recent API response.
+</ResponseField>
+
+#### close
+
+```python
+def close(self) -> None
+```
+
+Closes the HTTP transport and releases resources. Should be called when you're done using the client.
+
+```python
+client = Client(api_key="your-api-key")
+try:
+    # Use the client
+    datasets = client.datasets.list()
+finally:
+    client.close()
+```
+
+### Context Manager
+
+The `Client` can be used as a context manager, which automatically handles cleanup:
+
+```python
+with Client(api_key="your-api-key") as client:
+    datasets = client.datasets.list()
+    # client.close() is called automatically
+```

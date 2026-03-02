@@ -1,0 +1,283 @@
+---
+title: Quality Targets
+description: Set and monitor quality standards for your labeling projects
+---
+
+Quality targets define measurable quality goals for your labeling projects. They can trigger alerts when quality metrics fall below specified thresholds.
+
+## Methods
+
+### list
+
+List all quality targets for a project.
+
+```python
+client.quality_targets.list(
+    project_uid="proj_123",
+    limit=100,
+    cursor="next_page_token"
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of quality targets to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="list[QualityTarget]">
+  List of quality target objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str">
+  Cursor for the next page of results
+</ResponseField>
+
+### get
+
+Retrieve a specific quality target.
+
+```python
+client.quality_targets.get(
+    project_uid="proj_123",
+    uid="target_123"
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the quality target
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier of the quality target
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Name of the quality target
+</ResponseField>
+
+<ResponseField name="metric" type="str">
+  Quality metric to measure (e.g., "accuracy", "precision", "recall")
+</ResponseField>
+
+<ResponseField name="threshold" type="float">
+  Target threshold value
+</ResponseField>
+
+<ResponseField name="operator" type="str">
+  Comparison operator (e.g., "gte", "lte", "eq")
+</ResponseField>
+
+<ResponseField name="severity" type="str">
+  Severity level when threshold is not met (e.g., "warning", "error")
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Whether the quality target is currently active
+</ResponseField>
+
+<ResponseField name="notify_webhook" type="bool">
+  Whether to send webhook notifications
+</ResponseField>
+
+<ResponseField name="notify_emails" type="list[str]">
+  Email addresses to notify when threshold is not met
+</ResponseField>
+
+### create
+
+Create a new quality target for a project.
+
+```python
+client.quality_targets.create(
+    project_uid="proj_123",
+    name="Minimum Accuracy Target",
+    metric="accuracy",
+    threshold=0.95,
+    operator="gte",
+    severity="warning",
+    is_active=True,
+    notify_webhook=True,
+    notify_emails=["team@example.com"]
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="name" type="str" required>
+  Name of the quality target
+</ParamField>
+
+<ParamField path="metric" type="str" required>
+  Quality metric to measure (e.g., "accuracy", "precision", "recall", "f1_score")
+</ParamField>
+
+<ParamField path="threshold" type="float" required>
+  Target threshold value (0.0 to 1.0 for most metrics)
+</ParamField>
+
+<ParamField path="operator" type="str" optional>
+  Comparison operator: "gte", "lte", "eq", "gt", or "lt"
+</ParamField>
+
+<ParamField path="severity" type="str" optional>
+  Severity level: "info", "warning", "error", "critical"
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether the quality target should be active immediately (default: true)
+</ParamField>
+
+<ParamField path="notify_webhook" type="bool" optional>
+  Whether to send webhook notifications when threshold is not met
+</ParamField>
+
+<ParamField path="notify_emails" type="list[str]" optional>
+  Email addresses to notify when threshold is not met
+</ParamField>
+
+### update
+
+Update an existing quality target.
+
+```python
+client.quality_targets.update(
+    project_uid="proj_123",
+    uid="target_123",
+    threshold=0.98,
+    severity="error"
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the quality target to update
+</ParamField>
+
+<ParamField path="name" type="str" optional>
+  Updated name
+</ParamField>
+
+<ParamField path="metric" type="str" optional>
+  Updated metric
+</ParamField>
+
+<ParamField path="threshold" type="float" optional>
+  Updated threshold value
+</ParamField>
+
+<ParamField path="operator" type="str" optional>
+  Updated comparison operator
+</ParamField>
+
+<ParamField path="severity" type="str" optional>
+  Updated severity level
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether the quality target should be active
+</ParamField>
+
+<ParamField path="notify_webhook" type="bool" optional>
+  Updated webhook notification setting
+</ParamField>
+
+<ParamField path="notify_emails" type="list[str]" optional>
+  Updated email notification list
+</ParamField>
+
+### delete
+
+Delete a quality target.
+
+```python
+client.quality_targets.delete(
+    project_uid="proj_123",
+    uid="target_123"
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project
+</ParamField>
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the quality target to delete
+</ParamField>
+
+### evaluate
+
+Evaluate all quality targets for a project against current metrics.
+
+```python
+client.quality_targets.evaluate(project_uid="proj_123")
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project to evaluate
+</ParamField>
+
+<ResponseField name="results" type="list[QualityTargetEvaluation]">
+  List of evaluation results for each quality target
+</ResponseField>
+
+<ResponseField name="results[].target_uid" type="str">
+  UID of the evaluated quality target
+</ResponseField>
+
+<ResponseField name="results[].metric" type="str">
+  Metric that was evaluated
+</ResponseField>
+
+<ResponseField name="results[].current_value" type="float">
+  Current value of the metric
+</ResponseField>
+
+<ResponseField name="results[].threshold" type="float">
+  Target threshold
+</ResponseField>
+
+<ResponseField name="results[].passed" type="bool">
+  Whether the current value meets the threshold
+</ResponseField>
+
+<ResponseField name="results[].severity" type="str">
+  Severity level if threshold not met
+</ResponseField>
+
+## Async Methods
+
+All methods are available in async form through `AsyncAvala`:
+
+```python
+await client.quality_targets.list(project_uid="proj_123")
+await client.quality_targets.get(project_uid="proj_123", uid="target_123")
+await client.quality_targets.create(
+    project_uid="proj_123",
+    name="Accuracy Target",
+    metric="accuracy",
+    threshold=0.95
+)
+await client.quality_targets.update(
+    project_uid="proj_123",
+    uid="target_123",
+    threshold=0.98
+)
+await client.quality_targets.delete(project_uid="proj_123", uid="target_123")
+await client.quality_targets.evaluate(project_uid="proj_123")
+```

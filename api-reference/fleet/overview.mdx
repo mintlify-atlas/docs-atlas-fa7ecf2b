@@ -1,0 +1,172 @@
+---
+title: Fleet Management Overview
+description: Manage devices, recordings, events, alerts, and automation rules in your fleet
+---
+
+The Fleet Management API provides comprehensive tools for managing fleets of devices, tracking their recordings, monitoring events, configuring alert rules, and managing alert notifications.
+
+## Overview
+
+The `client.fleet` namespace provides access to six core fleet management resources:
+
+- **Devices**: Register, manage, and monitor devices in your fleet
+- **Recordings**: Access and manage recordings captured by your devices
+- **Events**: Create and query events associated with recordings and devices
+- **Rules**: Define automation rules that trigger alerts based on conditions
+- **Alerts**: View and manage alerts triggered by your rules
+- **Alert Channels**: Configure notification channels for alert delivery
+
+## Available Resources
+
+### Devices
+
+Manage the lifecycle of devices in your fleet:
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# Register a new device
+device = client.fleet.devices.register(
+    name="Vehicle 001",
+    type="autonomous_vehicle",
+    firmware_version="2.1.0"
+)
+
+# List all active devices
+devices = client.fleet.devices.list(status="active")
+```
+
+### Recordings
+
+Access recordings captured by your fleet devices:
+
+```python
+# List recordings from a specific device
+recordings = client.fleet.recordings.list(device_id="dev_123")
+
+# Get recording details
+recording = client.fleet.recordings.get("rec_456")
+```
+
+### Events
+
+Track important events within recordings:
+
+```python
+# Create an event
+event = client.fleet.events.create(
+    recording="rec_456",
+    device="dev_123",
+    label="Hard Braking",
+    type="safety",
+    timestamp="2024-01-15T10:30:00Z",
+    severity="high"
+)
+
+# Query events by type
+events = client.fleet.events.list(type="safety", severity="high")
+```
+
+### Rules
+
+Define automation rules to monitor your fleet:
+
+```python
+# Create a rule
+rule = client.fleet.rules.create(
+    name="High Temperature Alert",
+    condition={
+        "type": "threshold",
+        "field": "temperature",
+        "operator": ">",
+        "value": 80
+    },
+    actions=[
+        {"type": "create_alert", "severity": "critical"}
+    ],
+    enabled=True
+)
+```
+
+### Alerts
+
+Manage alerts triggered by your rules:
+
+```python
+# List unresolved alerts
+alerts = client.fleet.alerts.list(status="open")
+
+# Acknowledge an alert
+alert = client.fleet.alerts.acknowledge("alert_789")
+
+# Resolve an alert
+alert = client.fleet.alerts.resolve(
+    "alert_789",
+    resolution_note="Issue fixed by firmware update"
+)
+```
+
+### Alert Channels
+
+Configure how alerts are delivered:
+
+```python
+# Create an email alert channel
+channel = client.fleet.alert_channels.create(
+    name="Engineering Team Email",
+    type="email",
+    config={
+        "recipients": ["team@example.com"],
+        "severity_threshold": "high"
+    }
+)
+
+# Test a channel
+result = client.fleet.alert_channels.test("chan_123")
+```
+
+## Async Support
+
+All fleet management resources support async operations using the `AsyncAvala` client:
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def manage_fleet():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # All methods are async
+    devices = await client.fleet.devices.list()
+    events = await client.fleet.events.list(device_id="dev_123")
+    
+asyncio.run(manage_fleet())
+```
+
+## Pagination
+
+All `list()` methods return paginated results using cursor-based pagination:
+
+```python
+# First page
+page = client.fleet.devices.list(limit=50)
+
+for device in page.data:
+    print(device.name)
+
+# Next page
+if page.has_more:
+    next_page = client.fleet.devices.list(limit=50, cursor=page.next_cursor)
+```
+
+## Next Steps
+
+Explore the detailed documentation for each resource:
+
+- [Devices](/api-reference/fleet/devices) - Device registration and management
+- [Recordings](/api-reference/fleet/recordings) - Recording access and updates
+- [Events](/api-reference/fleet/events) - Event creation and querying
+- [Rules](/api-reference/fleet/rules) - Automation rule configuration
+- [Alerts](/api-reference/fleet/alerts) - Alert management and resolution

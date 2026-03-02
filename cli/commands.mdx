@@ -1,0 +1,747 @@
+---
+title: CLI Commands Reference
+description: Complete reference for all Avala CLI commands
+---
+
+This page documents all available commands in the Avala CLI.
+
+## `configure`
+
+Configure API credentials for the CLI.
+
+```bash
+avala configure
+```
+
+Interactively prompts for API key and base URL, then outputs shell export statements.
+
+## `datasets`
+
+Manage datasets.
+
+### `datasets list`
+
+List datasets with optional filters.
+
+```bash
+avala datasets list [OPTIONS]
+```
+
+**Options:**
+- `--data-type TEXT` — Filter by data type (`image`, `video`, `lidar`, `mcap`, `splat`)
+- `--name TEXT` — Filter by name (case-insensitive substring match)
+- `--status TEXT` — Filter by status (`creating`, `created`)
+- `--visibility TEXT` — Filter by visibility (`private`, `public`)
+- `--limit INTEGER` — Maximum number of results
+
+### `datasets get`
+
+Get details for a specific dataset.
+
+```bash
+avala datasets get <uid>
+```
+
+### `datasets create`
+
+Create a new dataset.
+
+```bash
+avala datasets create [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Display name for the dataset
+- `--slug TEXT` — URL-friendly identifier
+- `--data-type CHOICE` — Data type: `image`, `video`, `lidar`, `mcap`, or `splat`
+
+**Optional:**
+- `--is-sequence` — Dataset contains sequences (flag)
+- `--visibility CHOICE` — `private` or `public` (default: `private`)
+- `--create-metadata / --no-create-metadata` — Create dataset metadata (default: true)
+- `--provider-config TEXT` — Provider config as JSON string
+- `--owner TEXT` — Dataset owner username or email
+
+## `projects`
+
+Manage annotation projects.
+
+### `projects list`
+
+List projects.
+
+```bash
+avala projects list [--limit INTEGER]
+```
+
+### `projects get`
+
+Get project details.
+
+```bash
+avala projects get <uid>
+```
+
+## `tasks`
+
+Manage tasks.
+
+### `tasks list`
+
+List tasks.
+
+```bash
+avala tasks list [--limit INTEGER]
+```
+
+### `tasks get`
+
+Get task details.
+
+```bash
+avala tasks get <uid>
+```
+
+## `exports`
+
+Manage data exports.
+
+### `exports list`
+
+List exports.
+
+```bash
+avala exports list [--limit INTEGER]
+```
+
+### `exports get`
+
+Get export details and download URL.
+
+```bash
+avala exports get <uid>
+```
+
+### `exports create`
+
+Create a new export.
+
+```bash
+avala exports create [OPTIONS]
+```
+
+**Options:**
+- `--dataset TEXT` — Dataset UID
+- `--project TEXT` — Project UID
+
+## `agents`
+
+Manage agents.
+
+### `agents list`
+
+List agents.
+
+```bash
+avala agents list [--limit INTEGER]
+```
+
+### `agents get`
+
+Get agent details.
+
+```bash
+avala agents get <uid>
+```
+
+### `agents create`
+
+Create a new agent.
+
+```bash
+avala agents create [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Agent name
+
+**Optional:**
+- `--events TEXT` — Comma-separated list of event types
+- `--callback-url TEXT` — Webhook callback URL (HTTPS)
+- `--description TEXT` — Agent description
+- `--project TEXT` — Project UID to scope the agent to
+- `--task-types TEXT` — Comma-separated list of task types
+
+**Returns the agent secret** on creation — save it immediately.
+
+### `agents delete`
+
+Delete an agent.
+
+```bash
+avala agents delete <uid>
+```
+
+Prompts for confirmation before deleting.
+
+### `agents executions`
+
+List executions for an agent.
+
+```bash
+avala agents executions <uid> [--limit INTEGER]
+```
+
+### `agents test`
+
+Test an agent.
+
+```bash
+avala agents test <uid>
+```
+
+## `storage-configs`
+
+Manage cloud storage configurations.
+
+### `storage-configs list`
+
+List storage configurations.
+
+```bash
+avala storage-configs list
+```
+
+### `storage-configs create`
+
+Create a new storage configuration.
+
+```bash
+avala storage-configs create [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Configuration name
+- `--provider CHOICE` — Cloud provider: `aws_s3` or `gc_storage`
+
+**AWS S3 options:**
+- `--s3-bucket-name TEXT`
+- `--s3-bucket-region TEXT`
+- `--s3-bucket-prefix TEXT`
+- `--s3-access-key-id TEXT`
+- `--s3-secret-access-key TEXT`
+
+**Google Cloud Storage options:**
+- `--gc-bucket-name TEXT`
+- `--gc-prefix TEXT`
+- `--gc-auth-json TEXT` — Auth JSON content
+
+### `storage-configs test`
+
+Test connectivity for a storage configuration.
+
+```bash
+avala storage-configs test <uid>
+```
+
+### `storage-configs delete`
+
+Delete a storage configuration.
+
+```bash
+avala storage-configs delete <uid>
+```
+
+## `inference-providers`
+
+Manage inference providers.
+
+### `inference-providers list`
+
+List inference providers.
+
+```bash
+avala inference-providers list [--limit INTEGER]
+```
+
+### `inference-providers get`
+
+Get provider details.
+
+```bash
+avala inference-providers get <uid>
+```
+
+### `inference-providers create`
+
+Create a new inference provider.
+
+```bash
+avala inference-providers create [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Provider name
+- `--provider-type CHOICE` — Provider type: `http` or `sagemaker`
+- `--config TEXT` — Provider config as JSON string
+
+**Optional:**
+- `--description TEXT` — Provider description
+- `--project TEXT` — Project UID to scope the provider to
+
+### `inference-providers delete`
+
+Delete an inference provider.
+
+```bash
+avala inference-providers delete <uid>
+```
+
+### `inference-providers test`
+
+Test connectivity for an inference provider.
+
+```bash
+avala inference-providers test <uid>
+```
+
+## `auto-label`
+
+Manage auto-labeling jobs.
+
+### `auto-label list`
+
+List auto-label jobs.
+
+```bash
+avala auto-label list [OPTIONS]
+```
+
+**Options:**
+- `--project TEXT` — Filter by project UID
+- `--limit INTEGER` — Maximum number of results
+
+### `auto-label get`
+
+Get auto-label job details.
+
+```bash
+avala auto-label get <uid>
+```
+
+### `auto-label create`
+
+Create a new auto-label job.
+
+```bash
+avala auto-label create [OPTIONS]
+```
+
+**Required options:**
+- `--project TEXT` — Project UID
+
+**Optional:**
+- `--model-type CHOICE` — Inference model: `sam3` or `yolo`
+- `--confidence-threshold FLOAT` — Minimum confidence (0.0-1.0)
+- `--labels TEXT` — Comma-separated list of labels to filter
+- `--dry-run` — Run inference without saving results (flag)
+
+### `auto-label cancel`
+
+Cancel an auto-label job.
+
+```bash
+avala auto-label cancel <uid>
+```
+
+## `quality-targets`
+
+Manage quality targets.
+
+### `quality-targets list`
+
+List quality targets for a project.
+
+```bash
+avala quality-targets list --project <project-uid> [--limit INTEGER]
+```
+
+### `quality-targets get`
+
+Get quality target details.
+
+```bash
+avala quality-targets get --project <project-uid> <uid>
+```
+
+### `quality-targets create`
+
+Create a new quality target.
+
+```bash
+avala quality-targets create [OPTIONS]
+```
+
+**Required options:**
+- `--project TEXT` — Project UID
+- `--name TEXT` — Target name
+- `--metric TEXT` — Metric to monitor
+- `--threshold FLOAT` — Threshold value
+
+**Optional:**
+- `--operator TEXT` — Comparison operator (`gt`, `lt`, `gte`, `lte`)
+- `--severity CHOICE` — Alert severity: `warning` or `critical`
+
+### `quality-targets delete`
+
+Delete a quality target.
+
+```bash
+avala quality-targets delete --project <project-uid> <uid>
+```
+
+### `quality-targets evaluate`
+
+Evaluate all quality targets for a project.
+
+```bash
+avala quality-targets evaluate --project <project-uid>
+```
+
+## `consensus`
+
+Manage consensus scoring.
+
+### `consensus summary`
+
+Get consensus summary for a project.
+
+```bash
+avala consensus summary --project <project-uid>
+```
+
+### `consensus scores`
+
+List consensus scores for a project.
+
+```bash
+avala consensus scores --project <project-uid> [--limit INTEGER]
+```
+
+### `consensus compute`
+
+Compute consensus scores for a project.
+
+```bash
+avala consensus compute --project <project-uid>
+```
+
+### `consensus config`
+
+Get or update consensus configuration.
+
+```bash
+avala consensus config --project <project-uid> [OPTIONS]
+```
+
+**Options (all optional — omit to view current config):**
+- `--iou-threshold FLOAT` — IoU threshold (0.0-1.0)
+- `--min-agreement-ratio FLOAT` — Minimum agreement ratio (0.0-1.0)
+- `--min-annotations INTEGER` — Minimum annotations required
+
+## `webhooks`
+
+Manage webhooks.
+
+### `webhooks list`
+
+List webhooks.
+
+```bash
+avala webhooks list [--limit INTEGER]
+```
+
+### `webhooks get`
+
+Get webhook details.
+
+```bash
+avala webhooks get <uid>
+```
+
+### `webhooks create`
+
+Create a new webhook.
+
+```bash
+avala webhooks create [OPTIONS]
+```
+
+**Required options:**
+- `--target-url TEXT` — Webhook target URL (HTTPS)
+- `--events TEXT` — Comma-separated list of event types
+
+**Optional:**
+- `--secret TEXT` — HMAC signing secret (auto-generated if omitted)
+
+**Returns the webhook secret** on creation — save it immediately.
+
+### `webhooks delete`
+
+Delete a webhook.
+
+```bash
+avala webhooks delete <uid>
+```
+
+### `webhooks test`
+
+Test a webhook.
+
+```bash
+avala webhooks test <uid>
+```
+
+### `webhooks deliveries`
+
+List webhook deliveries.
+
+```bash
+avala webhooks deliveries [--limit INTEGER]
+```
+
+## `fleet`
+
+Fleet management commands.
+
+### `fleet devices`
+
+Manage fleet devices.
+
+#### `fleet devices list`
+
+List devices.
+
+```bash
+avala fleet devices list [OPTIONS]
+```
+
+**Options:**
+- `--status TEXT` — Filter by status (`online`, `offline`, `maintenance`)
+- `--type TEXT` — Filter by device type
+- `--limit INTEGER` — Maximum number of results
+
+#### `fleet devices get`
+
+Get device details.
+
+```bash
+avala fleet devices get <uid>
+```
+
+#### `fleet devices register`
+
+Register a new device.
+
+```bash
+avala fleet devices register [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Device name
+- `--type TEXT` — Device type
+
+**Optional:**
+- `--tags TEXT` — Comma-separated tags
+- `--firmware-version TEXT` — Firmware version
+
+**Returns a device token** — save it immediately.
+
+#### `fleet devices update`
+
+Update a device.
+
+```bash
+avala fleet devices update <uid> [OPTIONS]
+```
+
+**Options:**
+- `--status TEXT` — Device status
+- `--name TEXT` — Device name
+- `--tags TEXT` — Comma-separated tags
+
+#### `fleet devices delete`
+
+Delete a device.
+
+```bash
+avala fleet devices delete <uid>
+```
+
+### `fleet recordings`
+
+Manage fleet recordings.
+
+#### `fleet recordings list`
+
+List recordings.
+
+```bash
+avala fleet recordings list [OPTIONS]
+```
+
+**Options:**
+- `--device TEXT` — Filter by device UID
+- `--status TEXT` — Filter by status (`uploading`, `processing`, `ready`, `error`, `archived`)
+- `--limit INTEGER` — Maximum number of results
+
+#### `fleet recordings get`
+
+Get recording details.
+
+```bash
+avala fleet recordings get <uid>
+```
+
+### `fleet events`
+
+Manage fleet events.
+
+#### `fleet events list`
+
+List events.
+
+```bash
+avala fleet events list [OPTIONS]
+```
+
+**Options:**
+- `--device TEXT` — Filter by device UID
+- `--recording TEXT` — Filter by recording UID
+- `--type TEXT` — Filter by event type
+- `--limit INTEGER` — Maximum number of results
+
+#### `fleet events get`
+
+Get event details.
+
+```bash
+avala fleet events get <uid>
+```
+
+#### `fleet events create`
+
+Create a new event.
+
+```bash
+avala fleet events create [OPTIONS]
+```
+
+**Required options:**
+- `--recording TEXT` — Recording UID
+- `--device TEXT` — Device UID
+- `--type TEXT` — Event type
+- `--label TEXT` — Event label
+- `--timestamp TEXT` — Event timestamp (ISO 8601)
+
+**Optional:**
+- `--severity TEXT` — Severity (`info`, `warning`, `error`, `critical`)
+
+### `fleet rules`
+
+Manage fleet rules.
+
+#### `fleet rules list`
+
+List rules.
+
+```bash
+avala fleet rules list [--limit INTEGER]
+```
+
+#### `fleet rules get`
+
+Get rule details.
+
+```bash
+avala fleet rules get <uid>
+```
+
+#### `fleet rules create`
+
+Create a new rule.
+
+```bash
+avala fleet rules create [OPTIONS]
+```
+
+**Required options:**
+- `--name TEXT` — Rule name
+- `--condition-file PATH` — JSON file containing rule condition, actions, and optional scope
+
+**Optional:**
+- `--enabled / --disabled` — Enable or disable the rule (default: enabled)
+
+#### `fleet rules update`
+
+Update a rule.
+
+```bash
+avala fleet rules update <uid> [OPTIONS]
+```
+
+**Options:**
+- `--name TEXT` — Rule name
+- `--enabled / --disabled` — Enable or disable the rule
+
+#### `fleet rules delete`
+
+Delete a rule.
+
+```bash
+avala fleet rules delete <uid>
+```
+
+### `fleet alerts`
+
+Manage fleet alerts.
+
+#### `fleet alerts list`
+
+List alerts.
+
+```bash
+avala fleet alerts list [OPTIONS]
+```
+
+**Options:**
+- `--status TEXT` — Filter by status (`open`, `acknowledged`, `resolved`)
+- `--severity TEXT` — Filter by severity (`info`, `warning`, `error`, `critical`)
+- `--limit INTEGER` — Maximum number of results
+
+#### `fleet alerts get`
+
+Get alert details.
+
+```bash
+avala fleet alerts get <uid>
+```
+
+#### `fleet alerts acknowledge`
+
+Acknowledge an alert.
+
+```bash
+avala fleet alerts acknowledge <uid>
+```
+
+#### `fleet alerts resolve`
+
+Resolve an alert.
+
+```bash
+avala fleet alerts resolve <uid> [--note TEXT]
+```
+
+**Options:**
+- `--note TEXT` — Resolution note

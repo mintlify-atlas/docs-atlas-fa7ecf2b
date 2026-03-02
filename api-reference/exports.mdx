@@ -1,0 +1,225 @@
+---
+title: "Exports"
+description: "Export datasets and projects in various formats"
+---
+
+The `Exports` resource provides methods to create, retrieve, and list data exports.
+
+## Methods
+
+### list
+
+List all exports with pagination support.
+
+```python
+client.exports.list(
+    limit=None,
+    cursor=None
+) -> CursorPage[Export]
+```
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of exports to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[Export]" type="CursorPage[Export]">
+  A paginated list of exports. Use `.items` to access the export list, `.next_cursor` for pagination, and `.has_more` to check if more results exist.
+</ResponseField>
+
+#### Example
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all exports
+page = client.exports.list()
+for export in page.items:
+    print(export.uid, export.status)
+
+# List with pagination
+page = client.exports.list(limit=20)
+```
+
+---
+
+### create
+
+Create a new export for a project or dataset.
+
+```python
+client.exports.create(
+    project=None,
+    dataset=None
+) -> Export
+```
+
+<ParamField path="project" type="str | None" optional>
+  UID of the project to export
+</ParamField>
+
+<ParamField path="dataset" type="str | None" optional>
+  UID of the dataset to export
+</ParamField>
+
+<ResponseField name="Export" type="Export">
+  The newly created export object. The export will be processed asynchronously.
+</ResponseField>
+
+<Note>
+  You must specify either `project` or `dataset` (or both) when creating an export.
+</Note>
+
+#### Example
+
+```python
+# Export a project
+export = client.exports.create(project="project-uid-123")
+print(f"Export created: {export.uid}")
+print(f"Status: {export.status}")
+
+# Export a dataset
+export = client.exports.create(dataset="dataset-uid-456")
+
+# Export both
+export = client.exports.create(
+    project="project-uid-123",
+    dataset="dataset-uid-456"
+)
+```
+
+<Warning>
+  Export creation is an asynchronous operation. Use the `get()` method to poll the export status and retrieve the download URL when ready.
+</Warning>
+
+---
+
+### get
+
+Retrieve a specific export by its UID.
+
+```python
+client.exports.get(uid: str) -> Export
+```
+
+<ParamField path="uid" type="str" required>
+  The unique identifier of the export
+</ParamField>
+
+<ResponseField name="Export" type="Export">
+  The export object containing uid, status, download_url, and timestamps.
+</ResponseField>
+
+#### Example
+
+```python
+export = client.exports.get("export-uid-123")
+
+if export.status == "completed":
+    print(f"Download URL: {export.download_url}")
+elif export.status == "processing":
+    print("Export is still processing...")
+elif export.status == "failed":
+    print("Export failed")
+```
+
+---
+
+## Async Usage
+
+All methods are available in async form via `client.async_exports`:
+
+```python
+import asyncio
+from avala import AsyncAvala
+
+async def main():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # Create export
+    export = await client.exports.create(project="project-uid-123")
+    print(f"Export created: {export.uid}")
+    
+    # Poll until complete
+    while export.status == "processing":
+        await asyncio.sleep(5)
+        export = await client.exports.get(export.uid)
+    
+    if export.status == "completed":
+        print(f"Download: {export.download_url}")
+
+asyncio.run(main())
+```
+
+---
+
+## Response Types
+
+### Export
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the export
+</ResponseField>
+
+<ResponseField name="status" type="str | None">
+  Current status of the export (e.g., "pending", "processing", "completed", "failed")
+</ResponseField>
+
+<ResponseField name="download_url" type="str | None">
+  URL to download the export file (available when status is "completed")
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | None">
+  Timestamp when the export was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="datetime | None">
+  Timestamp when the export was last updated
+</ResponseField>
+
+### CursorPage
+
+<ResponseField name="items" type="list[T]">
+  List of items in the current page
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for fetching the next page (None if no more pages)
+</ResponseField>
+
+<ResponseField name="previous_cursor" type="str | None">
+  Cursor for fetching the previous page
+</ResponseField>
+
+<ResponseField name="has_more" type="bool">
+  Property indicating if more results are available
+</ResponseField>
+
+---
+
+## Common Patterns
+
+### Polling for Export Completion
+
+```python
+import time
+
+# Create export
+export = client.exports.create(project="project-uid-123")
+
+# Poll until complete
+while export.status in ["pending", "processing"]:
+    time.sleep(5)
+    export = client.exports.get(export.uid)
+    print(f"Status: {export.status}")
+
+if export.status == "completed":
+    print(f"Download URL: {export.download_url}")
+else:
+    print(f"Export failed with status: {export.status}")
+```

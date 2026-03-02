@@ -1,0 +1,147 @@
+---
+title: "Projects"
+description: "Manage annotation and labeling projects"
+---
+
+The `Projects` resource provides methods to retrieve and list projects.
+
+## Methods
+
+### list
+
+List all projects with pagination support.
+
+```python
+client.projects.list(
+    limit=None,
+    cursor=None
+) -> CursorPage[Project]
+```
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of projects to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[Project]" type="CursorPage[Project]">
+  A paginated list of projects. Use `.items` to access the project list, `.next_cursor` for pagination, and `.has_more` to check if more results exist.
+</ResponseField>
+
+#### Example
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all projects
+page = client.projects.list()
+for project in page.items:
+    print(project.name, project.status)
+
+# List with pagination
+page = client.projects.list(limit=20)
+while page.has_more:
+    for project in page.items:
+        print(project.uid)
+    page = client.projects.list(cursor=page.next_cursor)
+```
+
+---
+
+### get
+
+Retrieve a specific project by its UID.
+
+```python
+client.projects.get(uid: str) -> Project
+```
+
+<ParamField path="uid" type="str" required>
+  The unique identifier of the project
+</ParamField>
+
+<ResponseField name="Project" type="Project">
+  The project object containing uid, name, status, and timestamps.
+</ResponseField>
+
+#### Example
+
+```python
+project = client.projects.get("project-uid-123")
+print(f"Project: {project.name}")
+print(f"Status: {project.status}")
+print(f"Created: {project.created_at}")
+```
+
+---
+
+## Async Usage
+
+All methods are available in async form via `client.async_projects`:
+
+```python
+import asyncio
+from avala import AsyncAvala
+
+async def main():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # List projects
+    page = await client.projects.list(limit=10)
+    for project in page.items:
+        print(project.name)
+    
+    # Get specific project
+    project = await client.projects.get("project-uid-123")
+    print(project.status)
+
+asyncio.run(main())
+```
+
+---
+
+## Response Types
+
+### Project
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the project
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Human-readable name of the project
+</ResponseField>
+
+<ResponseField name="status" type="str | None">
+  Current status of the project (e.g., "active", "completed", "archived")
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | None">
+  Timestamp when the project was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="datetime | None">
+  Timestamp when the project was last updated
+</ResponseField>
+
+### CursorPage
+
+<ResponseField name="items" type="list[T]">
+  List of items in the current page
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for fetching the next page (None if no more pages)
+</ResponseField>
+
+<ResponseField name="previous_cursor" type="str | None">
+  Cursor for fetching the previous page
+</ResponseField>
+
+<ResponseField name="has_more" type="bool">
+  Property indicating if more results are available
+</ResponseField>

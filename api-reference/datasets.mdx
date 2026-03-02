@@ -1,0 +1,466 @@
+---
+title: "Datasets"
+description: "Manage datasets and their items and sequences"
+---
+
+The `Datasets` resource provides methods to create, retrieve, and list datasets, as well as manage dataset items and sequences.
+
+## Methods
+
+### list
+
+List all datasets with optional filtering.
+
+```python
+client.datasets.list(
+    data_type=None,
+    name=None,
+    status=None,
+    visibility=None,
+    limit=None,
+    cursor=None
+) -> CursorPage[Dataset]
+```
+
+<ParamField path="data_type" type="str | None" optional>
+  Filter datasets by data type
+</ParamField>
+
+<ParamField path="name" type="str | None" optional>
+  Filter datasets by name
+</ParamField>
+
+<ParamField path="status" type="str | None" optional>
+  Filter datasets by status
+</ParamField>
+
+<ParamField path="visibility" type="str | None" optional>
+  Filter datasets by visibility (e.g., "private", "public")
+</ParamField>
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of datasets to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[Dataset]" type="CursorPage[Dataset]">
+  A paginated list of datasets. Use `.items` to access the dataset list, `.next_cursor` for pagination, and `.has_more` to check if more results exist.
+</ResponseField>
+
+#### Example
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all datasets
+page = client.datasets.list()
+for dataset in page.items:
+    print(dataset.name, dataset.uid)
+
+# Filter by data type and visibility
+page = client.datasets.list(
+    data_type="image",
+    visibility="private",
+    limit=10
+)
+```
+
+---
+
+### get
+
+Retrieve a specific dataset by its UID.
+
+```python
+client.datasets.get(uid: str) -> Dataset
+```
+
+<ParamField path="uid" type="str" required>
+  The unique identifier of the dataset
+</ParamField>
+
+<ResponseField name="Dataset" type="Dataset">
+  The dataset object containing uid, name, slug, item_count, data_type, and timestamps.
+</ResponseField>
+
+#### Example
+
+```python
+dataset = client.datasets.get("dataset-uid-123")
+print(f"Dataset: {dataset.name}")
+print(f"Items: {dataset.item_count}")
+```
+
+---
+
+### create
+
+Create a new dataset.
+
+```python
+client.datasets.create(
+    name: str,
+    slug: str,
+    data_type: str,
+    is_sequence=False,
+    visibility="private",
+    create_metadata=True,
+    provider_config=None,
+    owner_name=None
+) -> Dataset
+```
+
+<ParamField path="name" type="str" required>
+  The human-readable name of the dataset
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  The URL-friendly identifier for the dataset
+</ParamField>
+
+<ParamField path="data_type" type="str" required>
+  The type of data stored in the dataset (e.g., "image", "video", "point_cloud")
+</ParamField>
+
+<ParamField path="is_sequence" type="bool" default="False">
+  Whether the dataset contains sequential data
+</ParamField>
+
+<ParamField path="visibility" type="str" default="private">
+  The visibility level of the dataset ("private" or "public")
+</ParamField>
+
+<ParamField path="create_metadata" type="bool" default="True">
+  Whether to automatically create metadata for dataset items
+</ParamField>
+
+<ParamField path="provider_config" type="dict[str, Any] | None" optional>
+  Configuration for the storage provider
+</ParamField>
+
+<ParamField path="owner_name" type="str | None" optional>
+  The name of the dataset owner (defaults to the authenticated user)
+</ParamField>
+
+<ResponseField name="Dataset" type="Dataset">
+  The newly created dataset object.
+</ResponseField>
+
+#### Example
+
+```python
+dataset = client.datasets.create(
+    name="My Image Dataset",
+    slug="my-image-dataset",
+    data_type="image",
+    visibility="private"
+)
+print(f"Created dataset: {dataset.uid}")
+```
+
+---
+
+### list_items
+
+List all items in a specific dataset.
+
+```python
+client.datasets.list_items(
+    owner: str,
+    slug: str,
+    limit=None,
+    cursor=None
+) -> CursorPage[DatasetItem]
+```
+
+<ParamField path="owner" type="str" required>
+  The owner of the dataset
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  The slug of the dataset
+</ParamField>
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[DatasetItem]" type="CursorPage[DatasetItem]">
+  A paginated list of dataset items.
+</ResponseField>
+
+#### Example
+
+```python
+page = client.datasets.list_items(
+    owner="username",
+    slug="my-dataset",
+    limit=50
+)
+
+for item in page.items:
+    print(item.uid, item.url)
+```
+
+---
+
+### get_item
+
+Retrieve a specific item from a dataset.
+
+```python
+client.datasets.get_item(
+    owner: str,
+    slug: str,
+    item_uid: str
+) -> DatasetItem
+```
+
+<ParamField path="owner" type="str" required>
+  The owner of the dataset
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  The slug of the dataset
+</ParamField>
+
+<ParamField path="item_uid" type="str" required>
+  The unique identifier of the item
+</ParamField>
+
+<ResponseField name="DatasetItem" type="DatasetItem">
+  The dataset item object containing uid, url, metadata, annotations, and related fields.
+</ResponseField>
+
+#### Example
+
+```python
+item = client.datasets.get_item(
+    owner="username",
+    slug="my-dataset",
+    item_uid="item-uid-123"
+)
+print(item.metadata)
+```
+
+---
+
+### list_sequences
+
+List all sequences in a dataset.
+
+```python
+client.datasets.list_sequences(
+    owner: str,
+    slug: str,
+    limit=None,
+    cursor=None
+) -> CursorPage[DatasetSequence]
+```
+
+<ParamField path="owner" type="str" required>
+  The owner of the dataset
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  The slug of the dataset
+</ParamField>
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of sequences to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[DatasetSequence]" type="CursorPage[DatasetSequence]">
+  A paginated list of dataset sequences.
+</ResponseField>
+
+<Note>
+  Sequences are only available for datasets created with `is_sequence=True`.
+</Note>
+
+#### Example
+
+```python
+page = client.datasets.list_sequences(
+    owner="username",
+    slug="my-video-dataset"
+)
+
+for sequence in page.items:
+    print(sequence.uid, sequence.number_of_frames)
+```
+
+---
+
+### get_sequence
+
+Retrieve a specific sequence from a dataset.
+
+```python
+client.datasets.get_sequence(
+    owner: str,
+    slug: str,
+    sequence_uid: str
+) -> DatasetSequence
+```
+
+<ParamField path="owner" type="str" required>
+  The owner of the dataset
+</ParamField>
+
+<ParamField path="slug" type="str" required>
+  The slug of the dataset
+</ParamField>
+
+<ParamField path="sequence_uid" type="str" required>
+  The unique identifier of the sequence
+</ParamField>
+
+<ResponseField name="DatasetSequence" type="DatasetSequence">
+  The dataset sequence object containing uid, frames, views, crop_data, and related fields.
+</ResponseField>
+
+#### Example
+
+```python
+sequence = client.datasets.get_sequence(
+    owner="username",
+    slug="my-video-dataset",
+    sequence_uid="sequence-uid-123"
+)
+print(f"Frames: {sequence.number_of_frames}")
+```
+
+---
+
+## Async Usage
+
+All methods are available in async form via `client.async_datasets`:
+
+```python
+import asyncio
+from avala import AsyncAvala
+
+async def main():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # List datasets
+    page = await client.datasets.list()
+    
+    # Create dataset
+    dataset = await client.datasets.create(
+        name="Async Dataset",
+        slug="async-dataset",
+        data_type="image"
+    )
+    
+    # Get dataset
+    dataset = await client.datasets.get("dataset-uid-123")
+
+asyncio.run(main())
+```
+
+---
+
+## Response Types
+
+### Dataset
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the dataset
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Human-readable name of the dataset
+</ResponseField>
+
+<ResponseField name="slug" type="str">
+  URL-friendly identifier
+</ResponseField>
+
+<ResponseField name="item_count" type="int" default="0">
+  Total number of items in the dataset
+</ResponseField>
+
+<ResponseField name="data_type" type="str | None">
+  Type of data in the dataset
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | None">
+  Timestamp when the dataset was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="datetime | None">
+  Timestamp when the dataset was last updated
+</ResponseField>
+
+### DatasetItem
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the item
+</ResponseField>
+
+<ResponseField name="url" type="str | None">
+  URL to access the item data
+</ResponseField>
+
+<ResponseField name="metadata" type="dict[str, Any] | None">
+  Custom metadata associated with the item
+</ResponseField>
+
+<ResponseField name="annotations" type="dict[str, Any] | None">
+  Annotation data for the item
+</ResponseField>
+
+<ResponseField name="thumbnails" type="list[str] | None">
+  List of thumbnail URLs
+</ResponseField>
+
+### DatasetSequence
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the sequence
+</ResponseField>
+
+<ResponseField name="number_of_frames" type="int | None">
+  Total number of frames in the sequence
+</ResponseField>
+
+<ResponseField name="frames" type="list[dict[str, Any]] | None">
+  List of frame data
+</ResponseField>
+
+<ResponseField name="views" type="list[dict[str, Any]] | None">
+  Different views or perspectives of the sequence
+</ResponseField>
+
+### CursorPage
+
+<ResponseField name="items" type="list[T]">
+  List of items in the current page
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for fetching the next page (None if no more pages)
+</ResponseField>
+
+<ResponseField name="previous_cursor" type="str | None">
+  Cursor for fetching the previous page
+</ResponseField>
+
+<ResponseField name="has_more" type="bool">
+  Property indicating if more results are available
+</ResponseField>

@@ -1,0 +1,372 @@
+---
+title: Cloud Storage Integration
+description: Configure AWS S3, Google Cloud Storage, and Azure storage with the Avala Python SDK
+---
+
+Integrate Avala with cloud storage providers to store and access your data directly from S3, Google Cloud Storage, or Azure Blob Storage.
+
+## Overview
+
+Storage configurations allow Avala to:
+
+- Read data directly from your cloud storage
+- Write exports and results to your buckets
+- Maintain data sovereignty and security
+- Reduce data transfer costs
+
+## Creating Storage Configurations
+
+### AWS S3
+
+Configure Amazon S3 bucket access:
+
+<Steps>
+  <Step title="Prepare S3 credentials">
+    Gather your AWS credentials and bucket information:
+    - Bucket name
+    - AWS region
+    - Access key ID
+    - Secret access key
+  </Step>
+
+  <Step title="Create the storage config">
+    ```python
+    from avala import Avala
+
+    client = Avala(api_key="your-api-key")
+
+    storage = client.storage_configs.create(
+        name="Production S3 Bucket",
+        provider="s3",
+        s3_bucket_name="my-company-data",
+        s3_bucket_region="us-west-2",
+        s3_access_key_id="AKIAIOSFODNN7EXAMPLE",
+        s3_secret_access_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    )
+
+    print(f"Storage config created: {storage.uid}")
+    ```
+  </Step>
+
+  <Step title="Test the connection">
+    ```python
+    # Verify the configuration works
+    result = client.storage_configs.test(storage.uid)
+    
+    if result.get("success"):
+        print("Storage configuration is valid")
+    else:
+        print(f"Configuration error: {result.get('error')}")
+    ```
+  </Step>
+</Steps>
+
+### S3 with Prefix
+
+Limit access to a specific path within your bucket:
+
+```python
+storage = client.storage_configs.create(
+    name="Training Data S3",
+    provider="s3",
+    s3_bucket_name="my-company-data",
+    s3_bucket_region="us-east-1",
+    s3_bucket_prefix="avala/training-data/",
+    s3_access_key_id="AKIAIOSFODNN7EXAMPLE",
+    s3_secret_access_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+)
+```
+
+### S3 Transfer Acceleration
+
+Enable S3 Transfer Acceleration for faster uploads:
+
+```python
+storage = client.storage_configs.create(
+    name="Accelerated S3 Bucket",
+    provider="s3",
+    s3_bucket_name="my-company-data",
+    s3_bucket_region="us-west-2",
+    s3_access_key_id="AKIAIOSFODNN7EXAMPLE",
+    s3_secret_access_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    s3_is_accelerated=True
+)
+```
+
+<Note>
+S3 Transfer Acceleration must be enabled on your bucket. Additional AWS charges may apply.
+</Note>
+
+### Google Cloud Storage
+
+Configure Google Cloud Storage bucket access:
+
+```python
+import json
+
+# Load service account credentials
+with open("service-account.json", "r") as f:
+    service_account_json = f.read()
+
+storage = client.storage_configs.create(
+    name="Production GCS Bucket",
+    provider="gcs",
+    gc_storage_bucket_name="my-company-data",
+    gc_storage_auth_json_content=service_account_json
+)
+
+print(f"GCS config created: {storage.uid}")
+```
+
+### GCS with Prefix
+
+```python
+storage = client.storage_configs.create(
+    name="Training Data GCS",
+    provider="gcs",
+    gc_storage_bucket_name="my-company-data",
+    gc_storage_prefix="avala/training/",
+    gc_storage_auth_json_content=service_account_json
+)
+```
+
+## Listing Storage Configurations
+
+```python
+# List all storage configs
+configs = client.storage_configs.list()
+
+for config in configs:
+    print(f"{config.name} ({config.provider})")
+    print(f"  UID: {config.uid}")
+    print(f"  Status: {config.status}")
+```
+
+### Pagination
+
+```python
+# Get storage configs with pagination
+page = client.storage_configs.list(limit=20)
+
+for config in page:
+    print(f"{config.name}: {config.provider}")
+
+if page.has_next:
+    next_page = client.storage_configs.list(
+        cursor=page.next_cursor,
+        limit=20
+    )
+```
+
+## Testing Storage Configurations
+
+Verify that a storage configuration is working correctly:
+
+```python
+# Test storage config
+result = client.storage_configs.test("sc_xyz789")
+
+if result.get("success"):
+    print("Configuration is valid")
+    print(f"Test details: {result}")
+else:
+    print(f"Test failed: {result.get('error')}")
+    print(f"Details: {result.get('details')}")
+```
+
+<Tip>
+Always test storage configurations after creation to catch authentication or permission issues early.
+</Tip>
+
+## Deleting Storage Configurations
+
+```python
+# Delete a storage config
+client.storage_configs.delete("sc_xyz789")
+print("Storage configuration deleted")
+```
+
+<Warning>
+Deleting a storage configuration does not delete data from your cloud storage. It only removes Avala's access to that storage.
+</Warning>
+
+## Using Storage Configs with Datasets
+
+Once configured, reference storage configs when creating datasets:
+
+```python
+# Create dataset with S3 storage
+dataset = client.datasets.create(
+    name="Traffic Camera Dataset",
+    slug="traffic-cameras",
+    data_type="image",
+    provider_config={
+        "storage_config_uid": "sc_xyz789",
+        "path_prefix": "cameras/traffic/"
+    }
+)
+
+print(f"Dataset created with cloud storage: {dataset.uid}")
+```
+
+## Complete Example
+
+<Tabs>
+  <Tab title="AWS S3">
+    ```python
+    from avala import Avala
+    import os
+
+    client = Avala(api_key="your-api-key")
+
+    # Create S3 storage configuration
+    print("Configuring S3 storage...")
+    storage = client.storage_configs.create(
+        name="Production S3",
+        provider="s3",
+        s3_bucket_name=os.getenv("AWS_BUCKET_NAME"),
+        s3_bucket_region=os.getenv("AWS_REGION"),
+        s3_bucket_prefix="avala/datasets/",
+        s3_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        s3_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+    )
+
+    print(f"Storage config created: {storage.uid}")
+
+    # Test the configuration
+    print("Testing connection...")
+    result = client.storage_configs.test(storage.uid)
+    
+    if result.get("success"):
+        print("Connection successful!")
+        
+        # Create dataset using this storage
+        dataset = client.datasets.create(
+            name="S3 Dataset",
+            slug="s3-dataset",
+            data_type="image",
+            provider_config={
+                "storage_config_uid": storage.uid,
+                "path_prefix": "images/"
+            }
+        )
+        
+        print(f"Dataset created: {dataset.uid}")
+    else:
+        print(f"Connection failed: {result.get('error')}")
+    ```
+  </Tab>
+
+  <Tab title="Google Cloud Storage">
+    ```python
+    from avala import Avala
+    import json
+    import os
+
+    client = Avala(api_key="your-api-key")
+
+    # Load GCS service account credentials
+    with open("service-account.json", "r") as f:
+        gcs_credentials = f.read()
+
+    # Create GCS storage configuration
+    print("Configuring GCS storage...")
+    storage = client.storage_configs.create(
+        name="Production GCS",
+        provider="gcs",
+        gc_storage_bucket_name="my-company-datasets",
+        gc_storage_prefix="avala/",
+        gc_storage_auth_json_content=gcs_credentials
+    )
+
+    print(f"Storage config created: {storage.uid}")
+
+    # Test the configuration
+    print("Testing connection...")
+    result = client.storage_configs.test(storage.uid)
+    
+    if result.get("success"):
+        print("Connection successful!")
+        
+        # Create dataset using this storage
+        dataset = client.datasets.create(
+            name="GCS Dataset",
+            slug="gcs-dataset",
+            data_type="video",
+            is_sequence=True,
+            provider_config={
+                "storage_config_uid": storage.uid,
+                "path_prefix": "videos/"
+            }
+        )
+        
+        print(f"Dataset created: {dataset.uid}")
+    else:
+        print(f"Connection failed: {result.get('error')}")
+    ```
+  </Tab>
+</Tabs>
+
+## Storage Provider Parameters
+
+### S3 Parameters
+
+- `s3_bucket_name`: Name of the S3 bucket
+- `s3_bucket_region`: AWS region (e.g., "us-west-2")
+- `s3_bucket_prefix`: Optional path prefix within the bucket
+- `s3_access_key_id`: AWS access key ID
+- `s3_secret_access_key`: AWS secret access key
+- `s3_is_accelerated`: Enable S3 Transfer Acceleration
+
+### Google Cloud Storage Parameters
+
+- `gc_storage_bucket_name`: Name of the GCS bucket
+- `gc_storage_prefix`: Optional path prefix within the bucket
+- `gc_storage_auth_json_content`: Service account JSON credentials as a string
+
+## Security Best Practices
+
+<Tip>
+- Use environment variables for credentials, never hardcode them
+- Create IAM users/service accounts with minimal required permissions
+- Use bucket prefixes to limit access scope
+- Regularly rotate access keys and service account credentials
+- Enable versioning on your buckets for data recovery
+- Test configurations in a non-production environment first
+</Tip>
+
+## Required Permissions
+
+### AWS S3 IAM Policy
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::my-bucket-name/*",
+        "arn:aws:s3:::my-bucket-name"
+      ]
+    }
+  ]
+}
+```
+
+### GCS Service Account Roles
+
+Your service account needs:
+
+- `Storage Object Viewer` (for reading)
+- `Storage Object Creator` (for writing)
+- Or `Storage Admin` (for full access)
+
+<Warning>
+Grant the minimum permissions necessary. Avoid using admin or root credentials in production.
+</Warning>

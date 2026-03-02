@@ -1,0 +1,111 @@
+---
+title: CLI Overview
+description: Install and configure the Avala command-line interface
+---
+
+The Avala CLI is an optional command-line tool that provides terminal access to the Avala API. It's useful for scripting, automation, and quick interactions with your Avala resources.
+
+## Installation
+
+Install the CLI by adding the `[cli]` extra when installing the Avala SDK:
+
+```bash
+pip install avala[cli]
+```
+
+This installs the `avala` command and its dependencies (including Click).
+
+## Configuration
+
+Before using the CLI, configure your API credentials:
+
+```bash
+avala configure
+```
+
+You'll be prompted for:
+- **API Key**: Your Avala API key
+- **Base URL**: The API endpoint (defaults to `https://api.avala.ai/api/v1`)
+
+The command outputs shell export statements that you can add to your `.bashrc`, `.zshrc`, or equivalent:
+
+```bash
+export AVALA_API_KEY=your-key-here
+export AVALA_BASE_URL=https://api.avala.ai/api/v1
+```
+
+### Alternative: Command-line flags
+
+You can also pass credentials as flags to any command:
+
+```bash
+avala --api-key YOUR_KEY datasets list
+avala --base-url https://custom.api.com --api-key YOUR_KEY projects list
+```
+
+### Environment variables
+
+The CLI reads these environment variables:
+- `AVALA_API_KEY`: Your API key
+- `AVALA_BASE_URL`: Custom API endpoint (optional)
+
+## Available commands
+
+The Avala CLI provides commands for managing all major resources:
+
+- **`datasets`** — Create and manage datasets
+- **`projects`** — Manage annotation projects
+- **`tasks`** — View tasks
+- **`exports`** — Create and download exports
+- **`agents`** — Manage agents and view executions
+- **`storage-configs`** — Configure cloud storage backends
+- **`inference-providers`** — Manage inference providers
+- **`auto-label`** — Create and monitor auto-labeling jobs
+- **`quality-targets`** — Set and evaluate quality metrics
+- **`consensus`** — Compute consensus scores
+- **`webhooks`** — Manage webhooks and view deliveries
+- **`fleet`** — Fleet management (devices, recordings, events, rules, alerts)
+
+Each command group has subcommands like `list`, `get`, `create`, and `delete`.
+
+## Usage
+
+General pattern:
+
+```bash
+avala [OPTIONS] COMMAND [ARGS]...
+```
+
+### Examples
+
+List all datasets:
+
+```bash
+avala datasets list
+```
+
+Get details for a specific project:
+
+```bash
+avala projects get <project-uid>
+```
+
+Create a new webhook:
+
+```bash
+avala webhooks create --target-url https://example.com/hook --events task.completed,task.created
+```
+
+## Getting help
+
+Use `--help` on any command or subcommand:
+
+```bash
+avala --help
+avala datasets --help
+avala datasets create --help
+```
+
+## Output format
+
+The CLI displays results in human-readable tables and detail views. For scripting, consider using the Python SDK directly for programmatic access.

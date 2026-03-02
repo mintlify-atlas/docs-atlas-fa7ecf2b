@@ -1,0 +1,442 @@
+---
+title: Fleet Rules
+description: Define automation rules to monitor fleet conditions and trigger alerts
+---
+
+The Rules resource allows you to create and manage automation rules that monitor your fleet for specific conditions and trigger actions (such as creating alerts) when those conditions are met.
+
+## Methods
+
+### list
+
+List all monitoring rules in your fleet.
+
+```python
+rules = client.fleet.rules.list(
+    enabled=True,
+    limit=50,
+    cursor=None
+)
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="boolean" optional>
+  Filter rules by enabled status (True for active rules, False for disabled)
+</ParamField>
+
+<ParamField path="limit" type="integer" optional>
+  Maximum number of rules to return per page
+</ParamField>
+
+<ParamField path="cursor" type="string" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="list[Rule]">
+  List of rule objects
+  
+  <ResponseField name="uid" type="string">
+    Unique rule identifier
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Rule name
+  </ResponseField>
+  
+  <ResponseField name="description" type="string">
+    Detailed description of what the rule monitors
+  </ResponseField>
+  
+  <ResponseField name="enabled" type="boolean">
+    Whether the rule is currently active
+  </ResponseField>
+  
+  <ResponseField name="condition" type="dict">
+    Condition configuration that triggers the rule
+  </ResponseField>
+  
+  <ResponseField name="actions" type="list[dict]">
+    Actions to perform when the condition is met
+  </ResponseField>
+  
+  <ResponseField name="scope" type="dict">
+    Optional scope limiting which devices/recordings this rule applies to
+  </ResponseField>
+  
+  <ResponseField name="hit_count" type="integer">
+    Number of times this rule has been triggered
+  </ResponseField>
+  
+  <ResponseField name="last_hit_at" type="datetime">
+    Timestamp of the most recent trigger
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="datetime">
+    Rule creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="datetime">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results are available
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for fetching the next page
+</ResponseField>
+
+---
+
+### create
+
+Create a new monitoring rule.
+
+```python
+rule = client.fleet.rules.create(
+    name="High Temperature Alert",
+    condition={
+        "type": "threshold",
+        "field": "temperature",
+        "operator": ">",
+        "value": 80
+    },
+    actions=[
+        {
+            "type": "create_alert",
+            "severity": "critical",
+            "message": "Device temperature exceeded 80°C"
+        },
+        {
+            "type": "notify_channel",
+            "channel_id": "chan_abc123"
+        }
+    ],
+    description="Alert when device temperature exceeds safe operating limits",
+    enabled=True,
+    scope={
+        "device_types": ["autonomous_vehicle"],
+        "tags": ["production"]
+    }
+)
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required>
+  Name for the rule
+</ParamField>
+
+<ParamField path="condition" type="dict" required>
+  Condition configuration defining when the rule triggers. Structure varies by condition type.
+</ParamField>
+
+<ParamField path="actions" type="list[dict]" required>
+  List of actions to perform when the condition is met. Each action is a dictionary with a `type` field and type-specific parameters.
+</ParamField>
+
+<ParamField path="description" type="string" optional>
+  Detailed description of the rule's purpose
+</ParamField>
+
+<ParamField path="enabled" type="boolean" optional>
+  Whether the rule should be active immediately (default: true)
+</ParamField>
+
+<ParamField path="scope" type="dict" optional>
+  Scope limiting which devices/recordings this rule applies to. Can include:
+  - `device_ids`: List of specific device IDs
+  - `device_types`: List of device types
+  - `tags`: List of required tags
+</ParamField>
+
+#### Returns
+
+Returns a `Rule` object with all fields populated.
+
+---
+
+### get
+
+Retrieve details for a specific rule.
+
+```python
+rule = client.fleet.rules.get("rule_def456")
+```
+
+#### Parameters
+
+<ParamField path="rule_id" type="string" required>
+  The unique identifier of the rule
+</ParamField>
+
+#### Returns
+
+Returns a `Rule` object.
+
+---
+
+### update
+
+Update an existing rule's configuration.
+
+```python
+rule = client.fleet.rules.update(
+    "rule_def456",
+    name="High Temperature Alert - Updated",
+    enabled=False,
+    condition={
+        "type": "threshold",
+        "field": "temperature",
+        "operator": ">",
+        "value": 85  # Increased threshold
+    },
+    description="Updated temperature threshold to 85°C"
+)
+```
+
+#### Parameters
+
+<ParamField path="rule_id" type="string" required>
+  The unique identifier of the rule to update
+</ParamField>
+
+<ParamField path="name" type="string" optional>
+  Updated name for the rule
+</ParamField>
+
+<ParamField path="description" type="string" optional>
+  Updated description
+</ParamField>
+
+<ParamField path="enabled" type="boolean" optional>
+  Enable or disable the rule
+</ParamField>
+
+<ParamField path="condition" type="dict" optional>
+  Updated condition configuration
+</ParamField>
+
+<ParamField path="actions" type="list[dict]" optional>
+  Updated actions list
+</ParamField>
+
+<ParamField path="scope" type="dict" optional>
+  Updated scope configuration
+</ParamField>
+
+#### Returns
+
+Returns the updated `Rule` object.
+
+---
+
+### delete
+
+Permanently delete a rule.
+
+```python
+client.fleet.rules.delete("rule_def456")
+```
+
+#### Parameters
+
+<ParamField path="rule_id" type="string" required>
+  The unique identifier of the rule to delete
+</ParamField>
+
+#### Returns
+
+Returns `None` on success.
+
+## Example Usage
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# Create a rule for detecting hard braking events
+hard_braking_rule = client.fleet.rules.create(
+    name="Hard Braking Detection",
+    description="Alert when hard braking is detected",
+    condition={
+        "type": "event_detection",
+        "event_type": "safety",
+        "event_label": "Hard Braking",
+        "severity": ["high", "critical"]
+    },
+    actions=[
+        {
+            "type": "create_alert",
+            "severity": "high",
+            "message": "Hard braking event detected"
+        }
+    ],
+    enabled=True,
+    scope={
+        "device_types": ["autonomous_vehicle"],
+        "tags": ["production"]
+    }
+)
+
+print(f"Created rule: {hard_braking_rule.uid}")
+
+# Create a rule for device offline detection
+offline_rule = client.fleet.rules.create(
+    name="Device Offline",
+    description="Alert when a device hasn't communicated in 1 hour",
+    condition={
+        "type": "device_offline",
+        "duration_minutes": 60
+    },
+    actions=[
+        {
+            "type": "create_alert",
+            "severity": "critical",
+            "message": "Device has been offline for over 1 hour"
+        },
+        {
+            "type": "notify_channel",
+            "channel_id": "chan_ops_team"
+        }
+    ],
+    enabled=True
+)
+
+# List all enabled rules
+active_rules = client.fleet.rules.list(enabled=True)
+
+print(f"\nActive rules ({len(active_rules.data)}):")
+for rule in active_rules.data:
+    print(f"  - {rule.name}")
+    print(f"    Hit count: {rule.hit_count}")
+    if rule.last_hit_at:
+        print(f"    Last triggered: {rule.last_hit_at}")
+
+# Update a rule to temporarily disable it
+updated = client.fleet.rules.update(
+    hard_braking_rule.uid,
+    enabled=False,
+    description="Temporarily disabled for testing"
+)
+
+print(f"\nRule '{updated.name}' disabled")
+
+# Get detailed rule information
+rule_detail = client.fleet.rules.get(offline_rule.uid)
+print(f"\nRule: {rule_detail.name}")
+print(f"Condition: {rule_detail.condition}")
+print(f"Actions: {rule_detail.actions}")
+print(f"Scope: {rule_detail.scope}")
+```
+
+## Async Usage
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def manage_rules():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # Create rule
+    rule = await client.fleet.rules.create(
+        name="Async Rule",
+        condition={"type": "threshold", "field": "speed", "operator": ">", "value": 70},
+        actions=[{"type": "create_alert", "severity": "medium"}]
+    )
+    
+    # List rules
+    rules = await client.fleet.rules.list()
+    
+    # Update rule
+    updated = await client.fleet.rules.update(
+        rule.uid,
+        enabled=False
+    )
+    
+    # Delete rule
+    await client.fleet.rules.delete(rule.uid)
+    
+asyncio.run(manage_rules())
+```
+
+## Condition Types
+
+Rules support various condition types:
+
+### Threshold Condition
+
+Triggers when a metric crosses a threshold:
+
+```python
+condition = {
+    "type": "threshold",
+    "field": "temperature",
+    "operator": ">",  # >, <, >=, <=, ==, !=
+    "value": 80
+}
+```
+
+### Event Detection Condition
+
+Triggers when specific events are detected:
+
+```python
+condition = {
+    "type": "event_detection",
+    "event_type": "safety",
+    "event_label": "Hard Braking",
+    "severity": ["high", "critical"]
+}
+```
+
+### Device Offline Condition
+
+Triggers when a device stops communicating:
+
+```python
+condition = {
+    "type": "device_offline",
+    "duration_minutes": 60
+}
+```
+
+## Action Types
+
+Rules can trigger various actions:
+
+### Create Alert
+
+```python
+action = {
+    "type": "create_alert",
+    "severity": "critical",
+    "message": "Custom alert message"
+}
+```
+
+### Notify Channel
+
+```python
+action = {
+    "type": "notify_channel",
+    "channel_id": "chan_abc123"
+}
+```
+
+### Webhook
+
+```python
+action = {
+    "type": "webhook",
+    "url": "https://example.com/webhook",
+    "method": "POST"
+}
+```

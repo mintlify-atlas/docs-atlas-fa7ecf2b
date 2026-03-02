@@ -1,0 +1,328 @@
+---
+title: AsyncClient
+description: The asynchronous AsyncClient class for concurrent API operations
+---
+
+The `AsyncClient` class provides asynchronous access to all Avala API resources using Python's `async`/`await` syntax. It's ideal for concurrent operations and high-throughput applications.
+
+## Initialization
+
+Create an async client instance with your API key:
+
+```python
+from avala import AsyncClient
+
+client = AsyncClient(api_key="your_api_key")
+```
+
+### Parameters
+
+<ParamField path="api_key" type="str | None" default="None">
+  Your Avala API key. If not provided, the SDK will attempt to read from the `AVALA_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str | None" default="None">
+  Override the default API base URL. Useful for testing or using a different API environment.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="30.0">
+  Request timeout in seconds. Controls how long to wait for a response before raising a timeout error.
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="2">
+  Maximum number of retry attempts for failed requests. The SDK automatically retries on network errors and 5xx server errors.
+</ParamField>
+
+## Context Manager (Recommended)
+
+The recommended way to use the async client is with the `async with` statement:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def main():
+    async with AsyncClient(api_key="your_api_key") as client:
+        projects = await client.projects.list()
+        for project in projects:
+            print(project.name)
+
+asyncio.run(main())
+```
+
+<Tip>
+  Using `async with` automatically calls `await client.close()` when the block exits, ensuring all network connections are properly closed.
+</Tip>
+
+## Manual Cleanup
+
+If you're not using a context manager, make sure to await `close()` when done:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def main():
+    client = AsyncClient(api_key="your_api_key")
+    try:
+        projects = await client.projects.list()
+    finally:
+        await client.close()
+
+asyncio.run(main())
+```
+
+## Async/Await Patterns
+
+All resource methods in `AsyncClient` are async and must be awaited:
+
+### Basic Usage
+
+```python
+async with AsyncClient(api_key="your_api_key") as client:
+    # Fetch a single project
+    project = await client.projects.get(id="proj_123")
+    
+    # Create a new dataset
+    dataset = await client.datasets.create(
+        name="Training Data",
+        project_id="proj_123"
+    )
+    
+    # List tasks
+    tasks = await client.tasks.list(project_id="proj_123")
+```
+
+### Concurrent Operations
+
+Use `asyncio.gather()` to run multiple requests concurrently:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def fetch_all_data():
+    async with AsyncClient(api_key="your_api_key") as client:
+        # Run multiple requests in parallel
+        projects, datasets, agents = await asyncio.gather(
+            client.projects.list(),
+            client.datasets.list(),
+            client.agents.list()
+        )
+        
+        return projects, datasets, agents
+
+results = asyncio.run(fetch_all_data())
+```
+
+<Note>
+  Concurrent requests can significantly improve performance when fetching multiple independent resources.
+</Note>
+
+### Batch Processing
+
+Process multiple items concurrently:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def process_tasks(task_ids: list[str]):
+    async with AsyncClient(api_key="your_api_key") as client:
+        # Fetch all tasks concurrently
+        tasks = await asyncio.gather(*[
+            client.tasks.get(id=task_id)
+            for task_id in task_ids
+        ])
+        
+        # Update all tasks concurrently
+        updated = await asyncio.gather(*[
+            client.tasks.update(id=task.id, status="completed")
+            for task in tasks
+        ])
+        
+        return updated
+
+asyncio.run(process_tasks(["task_1", "task_2", "task_3"]))
+```
+
+### Error Handling with Multiple Requests
+
+Handle errors gracefully in concurrent operations:
+
+```python
+import asyncio
+from avala import AsyncClient, NotFoundError
+
+async def safe_fetch_tasks(task_ids: list[str]):
+    async with AsyncClient(api_key="your_api_key") as client:
+        async def fetch_task(task_id: str):
+            try:
+                return await client.tasks.get(id=task_id)
+            except NotFoundError:
+                print(f"Task {task_id} not found")
+                return None
+        
+        tasks = await asyncio.gather(*[
+            fetch_task(task_id) for task_id in task_ids
+        ])
+        
+        # Filter out None values
+        return [task for task in tasks if task is not None]
+
+asyncio.run(safe_fetch_tasks(["task_1", "task_2", "task_3"]))
+```
+
+## Resource Access
+
+The async client provides access to all API resources through dedicated async properties defined in `avala/_async_client.py:45-60`:
+
+<CodeGroup>
+```python Data Resources
+# Datasets
+datasets = await client.datasets.list()
+
+# Tasks
+tasks = await client.tasks.list(project_id="proj_123")
+
+# Annotation Issues
+issues = await client.annotation_issues.list(task_id="task_456")
+```
+
+```python AI & Automation
+# Agents
+agent = await client.agents.create(
+    name="Label Assistant",
+    model="gpt-4"
+)
+
+# Auto-label Jobs
+job = await client.auto_label_jobs.create(
+    project_id="proj_123",
+    agent_id="agent_789"
+)
+```
+
+```python Concurrent Operations
+import asyncio
+
+# Fetch multiple resources in parallel
+project, dataset, agents = await asyncio.gather(
+    client.projects.get(id="proj_123"),
+    client.datasets.get(id="ds_456"),
+    client.agents.list()
+)
+```
+</CodeGroup>
+
+## Available Resources
+
+All async resources are initialized when the client is created:
+
+- `agents` - AI agent management
+- `annotation_issues` - Annotation quality issues
+- `auto_label_jobs` - Automated labeling jobs
+- `consensus` - Consensus annotation tracking
+- `datasets` - Dataset management
+- `exports` - Data export operations
+- `fleet` - Fleet management
+- `inference_providers` - AI model provider configuration
+- `organizations` - Organization settings
+- `projects` - Project management
+- `quality_targets` - Quality metrics and targets
+- `slices` - Dataset slicing and filtering
+- `storage_configs` - Storage configuration
+- `tasks` - Task management
+- `webhooks` - Webhook configuration
+- `webhook_deliveries` - Webhook delivery logs
+
+## Rate Limit Information
+
+Access rate limit information from the last API response:
+
+```python
+async with AsyncClient(api_key="your_api_key") as client:
+    projects = await client.projects.list()
+    
+    rate_limits = client.rate_limit_info
+    print(f"Limit: {rate_limits.get('x-ratelimit-limit')}")
+    print(f"Remaining: {rate_limits.get('x-ratelimit-remaining')}")
+    print(f"Reset: {rate_limits.get('x-ratelimit-reset')}")
+```
+
+<Note>
+  The `rate_limit_info` property is synchronous and returns a dictionary containing rate limit headers from the most recent API response.
+</Note>
+
+## AsyncIO Best Practices
+
+### Using asyncio.run()
+
+For top-level async code:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def main():
+    async with AsyncClient(api_key="your_api_key") as client:
+        projects = await client.projects.list()
+        return projects
+
+# Run the async function
+projects = asyncio.run(main())
+```
+
+### In Jupyter Notebooks
+
+Jupyter notebooks have an event loop running, so you can use `await` directly:
+
+```python
+# In Jupyter/IPython
+from avala import AsyncClient
+
+client = AsyncClient(api_key="your_api_key")
+projects = await client.projects.list()
+await client.close()
+```
+
+### With Web Frameworks
+
+Integrate with async web frameworks like FastAPI:
+
+```python
+from fastapi import FastAPI, Depends
+from avala import AsyncClient
+
+app = FastAPI()
+
+async def get_client():
+    async with AsyncClient(api_key="your_api_key") as client:
+        yield client
+
+@app.get("/projects")
+async def list_projects(client: AsyncClient = Depends(get_client)):
+    projects = await client.projects.list()
+    return projects
+```
+
+## Performance Considerations
+
+<Tip>
+  Use `AsyncClient` when you need to make multiple API calls concurrently. For simple sequential operations, the synchronous `Client` may be simpler and sufficient.
+</Tip>
+
+<Warning>
+  Be mindful of rate limits when making concurrent requests. The API may return `RateLimitError` if too many requests are made simultaneously.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client" icon="plug" href="/concepts/client">
+    Learn about the synchronous client
+  </Card>
+  <Card title="Pagination" icon="ellipsis" href="/concepts/pagination">
+    Handle paginated API responses
+  </Card>
+</CardGroup>

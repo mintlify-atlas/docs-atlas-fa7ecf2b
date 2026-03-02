@@ -1,0 +1,171 @@
+---
+title: "Tasks"
+description: "Manage annotation tasks within projects"
+---
+
+The `Tasks` resource provides methods to retrieve and list tasks with filtering capabilities.
+
+## Methods
+
+### list
+
+List all tasks with optional filtering by project or status.
+
+```python
+client.tasks.list(
+    project=None,
+    status=None,
+    limit=None,
+    cursor=None
+) -> CursorPage[Task]
+```
+
+<ParamField path="project" type="str | None" optional>
+  Filter tasks by project UID
+</ParamField>
+
+<ParamField path="status" type="str | None" optional>
+  Filter tasks by status (e.g., "pending", "in_progress", "completed")
+</ParamField>
+
+<ParamField path="limit" type="int | None" optional>
+  Maximum number of tasks to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str | None" optional>
+  Pagination cursor for fetching the next page of results
+</ParamField>
+
+<ResponseField name="CursorPage[Task]" type="CursorPage[Task]">
+  A paginated list of tasks. Use `.items` to access the task list, `.next_cursor` for pagination, and `.has_more` to check if more results exist.
+</ResponseField>
+
+#### Example
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# List all tasks
+page = client.tasks.list()
+for task in page.items:
+    print(task.name, task.status)
+
+# Filter by project
+page = client.tasks.list(project="project-uid-123")
+
+# Filter by status
+page = client.tasks.list(status="pending", limit=50)
+
+# Combine filters
+page = client.tasks.list(
+    project="project-uid-123",
+    status="in_progress"
+)
+```
+
+---
+
+### get
+
+Retrieve a specific task by its UID.
+
+```python
+client.tasks.get(uid: str) -> Task
+```
+
+<ParamField path="uid" type="str" required>
+  The unique identifier of the task
+</ParamField>
+
+<ResponseField name="Task" type="Task">
+  The task object containing uid, type, name, status, project reference, and timestamps.
+</ResponseField>
+
+#### Example
+
+```python
+task = client.tasks.get("task-uid-123")
+print(f"Task: {task.name}")
+print(f"Type: {task.type}")
+print(f"Status: {task.status}")
+print(f"Project: {task.project}")
+```
+
+---
+
+## Async Usage
+
+All methods are available in async form via `client.async_tasks`:
+
+```python
+import asyncio
+from avala import AsyncAvala
+
+async def main():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # List tasks
+    page = await client.tasks.list(project="project-uid-123")
+    for task in page.items:
+        print(task.name)
+    
+    # Get specific task
+    task = await client.tasks.get("task-uid-123")
+    print(task.status)
+
+asyncio.run(main())
+```
+
+---
+
+## Response Types
+
+### Task
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="type" type="str | None">
+  Type of task (e.g., "annotation", "review", "qa")
+</ResponseField>
+
+<ResponseField name="name" type="str | None">
+  Human-readable name of the task
+</ResponseField>
+
+<ResponseField name="status" type="str | None">
+  Current status of the task (e.g., "pending", "in_progress", "completed", "failed")
+</ResponseField>
+
+<ResponseField name="project" type="str | None">
+  UID of the project this task belongs to
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | None">
+  Timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="datetime | None">
+  Timestamp when the task was last updated
+</ResponseField>
+
+### CursorPage
+
+<ResponseField name="items" type="list[T]">
+  List of items in the current page
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for fetching the next page (None if no more pages)
+</ResponseField>
+
+<ResponseField name="previous_cursor" type="str | None">
+  Cursor for fetching the previous page
+</ResponseField>
+
+<ResponseField name="has_more" type="bool">
+  Property indicating if more results are available
+</ResponseField>

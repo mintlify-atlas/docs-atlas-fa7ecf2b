@@ -1,0 +1,293 @@
+---
+title: Fleet Devices
+description: Register and manage devices in your fleet
+---
+
+The Devices resource allows you to register, update, and monitor devices in your fleet. Each device can have metadata, tags, firmware version tracking, and status information.
+
+## Methods
+
+### list
+
+List devices in your fleet with optional filtering.
+
+```python
+client.fleet.devices.list(
+    status="active",
+    type="autonomous_vehicle",
+    limit=50,
+    cursor=None
+)
+```
+
+#### Parameters
+
+<ParamField path="status" type="string" optional>
+  Filter devices by status (e.g., "active", "inactive", "maintenance")
+</ParamField>
+
+<ParamField path="type" type="string" optional>
+  Filter devices by type
+</ParamField>
+
+<ParamField path="limit" type="integer" optional>
+  Maximum number of devices to return per page (default: 50)
+</ParamField>
+
+<ParamField path="cursor" type="string" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="list[Device]">
+  List of device objects
+  
+  <ResponseField name="uid" type="string">
+    Unique device identifier
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Device name
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Device type
+  </ResponseField>
+  
+  <ResponseField name="status" type="string">
+    Current device status
+  </ResponseField>
+  
+  <ResponseField name="firmware_version" type="string">
+    Installed firmware version
+  </ResponseField>
+  
+  <ResponseField name="tags" type="list[string]">
+    Tags associated with the device
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="dict">
+    Custom metadata dictionary
+  </ResponseField>
+  
+  <ResponseField name="last_seen_at" type="datetime">
+    Timestamp of last device communication
+  </ResponseField>
+  
+  <ResponseField name="device_token" type="string">
+    Authentication token for the device
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="datetime">
+    Device registration timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="datetime">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results are available
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for fetching the next page
+</ResponseField>
+
+---
+
+### register
+
+Register a new device in your fleet.
+
+```python
+device = client.fleet.devices.register(
+    name="Vehicle 001",
+    type="autonomous_vehicle",
+    firmware_version="2.1.0",
+    tags=["production", "region-west"],
+    metadata={"license_plate": "ABC123", "vin": "1HGBH41JXMN109186"}
+)
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required>
+  Name for the device
+</ParamField>
+
+<ParamField path="type" type="string" required>
+  Device type identifier
+</ParamField>
+
+<ParamField path="firmware_version" type="string" optional>
+  Firmware version installed on the device
+</ParamField>
+
+<ParamField path="tags" type="list[string]" optional>
+  Tags to categorize the device
+</ParamField>
+
+<ParamField path="metadata" type="dict" optional>
+  Custom metadata as key-value pairs
+</ParamField>
+
+#### Returns
+
+Returns a `Device` object with all fields populated, including the generated `uid` and `device_token`.
+
+---
+
+### get
+
+Retrieve details for a specific device.
+
+```python
+device = client.fleet.devices.get("dev_abc123")
+```
+
+#### Parameters
+
+<ParamField path="device_id" type="string" required>
+  The unique identifier of the device
+</ParamField>
+
+#### Returns
+
+Returns a `Device` object.
+
+---
+
+### update
+
+Update an existing device's properties.
+
+```python
+device = client.fleet.devices.update(
+    "dev_abc123",
+    name="Vehicle 001 - Updated",
+    status="maintenance",
+    firmware_version="2.2.0",
+    tags=["production", "region-west", "maintenance"],
+    metadata={"last_service": "2024-03-01"}
+)
+```
+
+#### Parameters
+
+<ParamField path="device_id" type="string" required>
+  The unique identifier of the device to update
+</ParamField>
+
+<ParamField path="name" type="string" optional>
+  New name for the device
+</ParamField>
+
+<ParamField path="status" type="string" optional>
+  New status for the device
+</ParamField>
+
+<ParamField path="firmware_version" type="string" optional>
+  Updated firmware version
+</ParamField>
+
+<ParamField path="tags" type="list[string]" optional>
+  Updated tags (replaces existing tags)
+</ParamField>
+
+<ParamField path="metadata" type="dict" optional>
+  Updated metadata (merges with existing metadata)
+</ParamField>
+
+#### Returns
+
+Returns the updated `Device` object.
+
+---
+
+### delete
+
+Permanently delete a device from your fleet.
+
+```python
+client.fleet.devices.delete("dev_abc123")
+```
+
+#### Parameters
+
+<ParamField path="device_id" type="string" required>
+  The unique identifier of the device to delete
+</ParamField>
+
+#### Returns
+
+Returns `None` on success.
+
+## Example Usage
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# Register a new device
+device = client.fleet.devices.register(
+    name="Delivery Bot 42",
+    type="delivery_robot",
+    firmware_version="3.0.1",
+    tags=["warehouse-a", "active"],
+    metadata={
+        "serial_number": "DB-2024-042",
+        "assigned_zone": "north"
+    }
+)
+
+print(f"Registered device: {device.uid}")
+print(f"Device token: {device.device_token}")
+
+# List all active delivery robots
+devices = client.fleet.devices.list(type="delivery_robot", status="active")
+
+for d in devices.data:
+    print(f"Device {d.name}: Last seen at {d.last_seen_at}")
+
+# Update device status
+updated = client.fleet.devices.update(
+    device.uid,
+    status="charging",
+    metadata={"battery_level": "35%"}
+)
+
+# Get device details
+details = client.fleet.devices.get(device.uid)
+print(f"Current status: {details.status}")
+```
+
+## Async Usage
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def manage_devices():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # Register device
+    device = await client.fleet.devices.register(
+        name="Async Device",
+        type="sensor"
+    )
+    
+    # List devices
+    devices = await client.fleet.devices.list()
+    
+    # Update device
+    updated = await client.fleet.devices.update(
+        device.uid,
+        status="active"
+    )
+    
+asyncio.run(manage_devices())
+```

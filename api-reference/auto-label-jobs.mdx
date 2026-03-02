@@ -1,0 +1,152 @@
+---
+title: Auto-Label Jobs
+description: Automatically label data using machine learning models
+---
+
+Auto-label jobs use trained models to automatically generate predictions and labels for unlabeled data in your projects.
+
+## Methods
+
+### list
+
+List all auto-label jobs.
+
+```python
+client.auto_label_jobs.list(
+    project="proj_123",
+    limit=100,
+    cursor="next_page_token"
+)
+```
+
+<ParamField path="project" type="str" optional>
+  Filter jobs by project UID
+</ParamField>
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of jobs to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="list[AutoLabelJob]">
+  List of auto-label job objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str">
+  Cursor for the next page of results
+</ResponseField>
+
+### get
+
+Retrieve a specific auto-label job by UID.
+
+```python
+client.auto_label_jobs.get(uid="job_123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the auto-label job
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier of the job
+</ResponseField>
+
+<ResponseField name="project" type="str">
+  Project UID where the job is running
+</ResponseField>
+
+<ResponseField name="model_type" type="str">
+  Type of model used for labeling
+</ResponseField>
+
+<ResponseField name="confidence_threshold" type="float">
+  Minimum confidence score for predictions
+</ResponseField>
+
+<ResponseField name="labels" type="list[str]">
+  Labels to generate predictions for
+</ResponseField>
+
+<ResponseField name="status" type="str">
+  Current status of the job (pending, running, completed, failed)
+</ResponseField>
+
+<ResponseField name="created_at" type="str">
+  Timestamp when the job was created
+</ResponseField>
+
+<ResponseField name="completed_at" type="str">
+  Timestamp when the job completed
+</ResponseField>
+
+### create
+
+Create a new auto-label job for a project.
+
+```python
+client.auto_label_jobs.create(
+    project_uid="proj_123",
+    model_type="yolov8",
+    confidence_threshold=0.8,
+    labels=["person", "car", "bicycle"],
+    dry_run=False
+)
+```
+
+<ParamField path="project_uid" type="str" required>
+  UID of the project to run auto-labeling on
+</ParamField>
+
+<ParamField path="model_type" type="str" optional>
+  Type of model to use (e.g., "yolov8", "faster-rcnn")
+</ParamField>
+
+<ParamField path="confidence_threshold" type="float" optional>
+  Minimum confidence score for predictions (0.0 to 1.0)
+</ParamField>
+
+<ParamField path="labels" type="list[str]" optional>
+  Specific labels to generate predictions for. If not provided, uses all project labels.
+</ParamField>
+
+<ParamField path="dry_run" type="bool" optional>
+  If true, preview results without saving labels (default: false)
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier of the created job
+</ResponseField>
+
+<ResponseField name="status" type="str">
+  Initial status of the job
+</ResponseField>
+
+### cancel
+
+Cancel a running auto-label job.
+
+```python
+client.auto_label_jobs.cancel(uid="job_123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the job to cancel
+</ParamField>
+
+## Async Methods
+
+All methods are available in async form through `AsyncAvala`:
+
+```python
+await client.auto_label_jobs.list(project="proj_123")
+await client.auto_label_jobs.get(uid="job_123")
+await client.auto_label_jobs.create(
+    project_uid="proj_123",
+    model_type="yolov8"
+)
+await client.auto_label_jobs.cancel(uid="job_123")
+```

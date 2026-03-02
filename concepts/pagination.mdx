@@ -1,0 +1,313 @@
+---
+title: Pagination
+description: Working with cursor-based pagination in the Avala SDK
+---
+
+The Avala SDK uses cursor-based pagination for list endpoints that may return large result sets. The `CursorPage` class provides a clean interface for iterating through paginated results.
+
+## CursorPage Class
+
+The `CursorPage` class is a generic container defined in `avala/_pagination.py:11-28` that wraps paginated API responses:
+
+```python
+from avala import Client
+
+client = Client(api_key="your_api_key")
+page = client.projects.list(limit=10)
+
+print(f"Items in this page: {len(page)}")
+print(f"Has more results: {page.has_more}")
+print(f"Next cursor: {page.next_cursor}")
+```
+
+### Properties
+
+<ParamField path="items" type="list[T]">
+  The list of items in the current page. The type `T` depends on the resource being queried (e.g., `Project`, `Task`, `Dataset`).
+</ParamField>
+
+<ParamField path="next_cursor" type="str | None">
+  The cursor to use for fetching the next page of results. `None` if this is the last page.
+</ParamField>
+
+<ParamField path="previous_cursor" type="str | None">
+  The cursor to use for fetching the previous page of results. `None` if this is the first page.
+</ParamField>
+
+<ParamField path="has_more" type="bool">
+  A convenience property that returns `True` if there are more results available (i.e., `next_cursor is not None`).
+</ParamField>
+
+## Iterating Over a Page
+
+The `CursorPage` class implements the iterator protocol, making it easy to loop through items:
+
+```python
+from avala import Client
+
+client = Client(api_key="your_api_key")
+page = client.tasks.list(project_id="proj_123", limit=50)
+
+# Iterate directly over the page
+for task in page:
+    print(f"Task: {task.id} - {task.status}")
+```
+
+<Tip>
+  When you iterate over a `CursorPage`, you're iterating over the `items` list. This only gives you the current page's items.
+</Tip>
+
+## Manual Pagination
+
+For fine-grained control, manually fetch pages using cursors:
+
+```python
+from avala import Client
+
+client = Client(api_key="your_api_key")
+
+# Fetch the first page
+page = client.datasets.list(limit=25)
+
+while True:
+    # Process items in the current page
+    for dataset in page:
+        print(f"Dataset: {dataset.name}")
+    
+    # Check if there are more results
+    if not page.has_more:
+        break
+    
+    # Fetch the next page using the cursor
+    page = client.datasets.list(
+        limit=25,
+        cursor=page.next_cursor
+    )
+```
+
+<Note>
+  The `cursor` parameter is passed to the list method to fetch the next page. The SDK handles encoding and decoding of cursors automatically.
+</Note>
+
+## Collecting All Results
+
+To fetch all results across multiple pages:
+
+```python
+from avala import Client
+
+client = Client(api_key="your_api_key")
+
+all_tasks = []
+page = client.tasks.list(project_id="proj_123", limit=100)
+
+while True:
+    all_tasks.extend(page.items)
+    
+    if not page.has_more:
+        break
+    
+    page = client.tasks.list(
+        project_id="proj_123",
+        limit=100,
+        cursor=page.next_cursor
+    )
+
+print(f"Total tasks: {len(all_tasks)}")
+```
+
+<Warning>
+  Be cautious when fetching all results for large datasets. Consider using pagination with smaller page sizes and processing items incrementally to avoid memory issues.
+</Warning>
+
+## Async Pagination
+
+Pagination works the same way with `AsyncClient`, but remember to `await` the API calls:
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def fetch_all_projects():
+    async with AsyncClient(api_key="your_api_key") as client:
+        all_projects = []
+        page = await client.projects.list(limit=50)
+        
+        while True:
+            all_projects.extend(page.items)
+            
+            if not page.has_more:
+                break
+            
+            page = await client.projects.list(
+                limit=50,
+                cursor=page.next_cursor
+            )
+        
+        return all_projects
+
+projects = asyncio.run(fetch_all_projects())
+print(f"Total projects: {len(projects)}")
+```
+
+## Pagination Parameters
+
+Most list endpoints support the following pagination parameters:
+
+<ParamField path="limit" type="int" default="100">
+  The maximum number of items to return per page. The API may return fewer items than requested.
+</ParamField>
+
+<ParamField path="cursor" type="str | None" default="None">
+  The cursor for fetching a specific page. Use `next_cursor` from a previous response to get the next page.
+</ParamField>
+
+## Example: Processing in Batches
+
+Process results in manageable batches:
+
+```python
+from avala import Client
+
+def process_batch(items):
+    """Process a batch of items."""
+    for item in items:
+        # Your processing logic here
+        print(f"Processing: {item.id}")
+
+client = Client(api_key="your_api_key")
+page = client.exports.list(project_id="proj_123", limit=50)
+
+while True:
+    # Process the current page
+    process_batch(page.items)
+    
+    # Move to the next page
+    if not page.has_more:
+        break
+    
+    page = client.exports.list(
+        project_id="proj_123",
+        limit=50,
+        cursor=page.next_cursor
+    )
+```
+
+## Page Size Recommendations
+
+<Tip>
+  Choose a page size based on your use case:
+  - **Small pages (10-25)**: Better for real-time UI updates and lower memory usage
+  - **Medium pages (50-100)**: Good balance for most applications
+  - **Large pages (100-500)**: Fewer API calls but higher memory usage
+</Tip>
+
+## Checking Page Length
+
+The `CursorPage` class implements `__len__()`, allowing you to check the number of items:
+
+```python
+page = client.tasks.list(project_id="proj_123", limit=100)
+
+print(f"Items in page: {len(page)}")
+print(f"Expected limit: 100")
+print(f"Has more: {page.has_more}")
+```
+
+<Note>
+  The actual number of items returned may be less than the requested limit, even if there are more results available. Always check `has_more` to determine if pagination should continue.
+</Note>
+
+## Backward Pagination
+
+While the API supports `previous_cursor`, most workflows only need forward pagination:
+
+```python
+# Generally not needed, but available if required
+page = client.datasets.list(limit=25, cursor=page.previous_cursor)
+```
+
+## Common Patterns
+
+### Pattern 1: Fetch and Process All
+
+```python
+def fetch_all(client, project_id):
+    results = []
+    page = client.tasks.list(project_id=project_id, limit=100)
+    
+    while True:
+        results.extend(page.items)
+        if not page.has_more:
+            break
+        page = client.tasks.list(
+            project_id=project_id,
+            limit=100,
+            cursor=page.next_cursor
+        )
+    
+    return results
+```
+
+### Pattern 2: Process Until Condition
+
+```python
+def find_first_match(client, project_id, condition):
+    page = client.tasks.list(project_id=project_id, limit=50)
+    
+    while True:
+        for task in page:
+            if condition(task):
+                return task
+        
+        if not page.has_more:
+            return None
+        
+        page = client.tasks.list(
+            project_id=project_id,
+            limit=50,
+            cursor=page.next_cursor
+        )
+```
+
+### Pattern 3: Async Concurrent Processing
+
+```python
+import asyncio
+from avala import AsyncClient
+
+async def process_all_pages(project_id):
+    async with AsyncClient(api_key="your_api_key") as client:
+        page = await client.tasks.list(project_id=project_id, limit=100)
+        
+        while True:
+            # Process current page items concurrently
+            await asyncio.gather(*[
+                process_task(task) for task in page.items
+            ])
+            
+            if not page.has_more:
+                break
+            
+            page = await client.tasks.list(
+                project_id=project_id,
+                limit=100,
+                cursor=page.next_cursor
+            )
+
+async def process_task(task):
+    # Your async processing logic
+    await asyncio.sleep(0.1)  # Simulate work
+    print(f"Processed: {task.id}")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client" icon="plug" href="/concepts/client">
+    Learn about the synchronous client
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/concepts/error-handling">
+    Handle API errors gracefully
+  </Card>
+</CardGroup>

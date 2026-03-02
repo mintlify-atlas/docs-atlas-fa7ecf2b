@@ -1,0 +1,218 @@
+---
+title: Inference Providers
+description: Manage AI model inference provider configurations
+---
+
+## list
+
+List all inference providers.
+
+```python
+client.inference_providers.list(
+    limit=10,
+    cursor="abc123"
+)
+```
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="List[InferenceProvider]">
+  List of inference provider objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for the next page, or None if no more results
+</ResponseField>
+
+## get
+
+Retrieve a specific inference provider by UID.
+
+```python
+client.inference_providers.get("ip_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the inference provider
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the inference provider
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Name of the inference provider
+</ResponseField>
+
+<ResponseField name="provider_type" type="str">
+  Type of provider (e.g., "openai", "anthropic", "custom")
+</ResponseField>
+
+<ResponseField name="config" type="dict">
+  Provider-specific configuration settings
+</ResponseField>
+
+<ResponseField name="is_active" type="bool">
+  Whether the provider is currently active
+</ResponseField>
+
+## create
+
+Create a new inference provider configuration.
+
+```python
+client.inference_providers.create(
+    name="OpenAI GPT-4",
+    provider_type="openai",
+    config={
+        "api_key": "sk-...",
+        "model": "gpt-4",
+        "temperature": 0.7
+    },
+    description="Production OpenAI provider",
+    is_active=True,
+    project="proj_xyz789"
+)
+```
+
+<ParamField path="name" type="str" required>
+  Name for this inference provider
+</ParamField>
+
+<ParamField path="provider_type" type="str" required>
+  Type of provider (e.g., "openai", "anthropic", "azure", "custom")
+</ParamField>
+
+<ParamField path="config" type="dict" required>
+  Provider-specific configuration object (API keys, endpoints, model parameters)
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Optional description of this provider configuration
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Whether this provider should be active (default: true)
+</ParamField>
+
+<ParamField path="project" type="str" optional>
+  UID of the project to associate this provider with
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the inference provider
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Name of the inference provider
+</ResponseField>
+
+<ResponseField name="provider_type" type="str">
+  Type of provider
+</ResponseField>
+
+<ResponseField name="config" type="dict">
+  Provider configuration
+</ResponseField>
+
+## update
+
+Update an existing inference provider.
+
+```python
+client.inference_providers.update(
+    "ip_abc123",
+    name="Updated Provider Name",
+    config={
+        "api_key": "sk-new-key",
+        "model": "gpt-4-turbo"
+    },
+    is_active=False
+)
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the inference provider to update
+</ParamField>
+
+<ParamField path="name" type="str" optional>
+  Updated name for the provider
+</ParamField>
+
+<ParamField path="description" type="str" optional>
+  Updated description
+</ParamField>
+
+<ParamField path="provider_type" type="str" optional>
+  Updated provider type
+</ParamField>
+
+<ParamField path="config" type="dict" optional>
+  Updated configuration object
+</ParamField>
+
+<ParamField path="is_active" type="bool" optional>
+  Updated active status
+</ParamField>
+
+<ParamField path="project" type="str" optional>
+  Updated project association
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the inference provider
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Updated name
+</ResponseField>
+
+<ResponseField name="provider_type" type="str">
+  Provider type
+</ResponseField>
+
+<ResponseField name="config" type="dict">
+  Updated configuration
+</ResponseField>
+
+## delete
+
+Delete an inference provider.
+
+```python
+client.inference_providers.delete("ip_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the inference provider to delete
+</ParamField>
+
+## test
+
+Test an inference provider to verify connectivity and configuration.
+
+```python
+client.inference_providers.test("ip_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the inference provider to test
+</ParamField>
+
+<ResponseField name="success" type="bool">
+  Whether the test was successful
+</ResponseField>
+
+<ResponseField name="message" type="str">
+  Test result message or error details
+</ResponseField>
+
+<ResponseField name="latency_ms" type="float">
+  Response latency in milliseconds
+</ResponseField>

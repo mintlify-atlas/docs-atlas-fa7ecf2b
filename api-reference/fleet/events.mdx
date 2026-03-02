@@ -1,0 +1,364 @@
+---
+title: Fleet Events
+description: Create and query events associated with recordings and devices
+---
+
+The Events resource allows you to create, retrieve, and manage events that occur within your fleet recordings. Events represent significant moments or occurrences that you want to track and analyze.
+
+## Methods
+
+### list
+
+Query events with flexible filtering options.
+
+```python
+events = client.fleet.events.list(
+    recording_id="rec_abc123",
+    device_id="dev_xyz789",
+    type="safety",
+    severity="high",
+    limit=50,
+    cursor=None
+)
+```
+
+#### Parameters
+
+<ParamField path="recording_id" type="string" optional>
+  Filter events by recording ID
+</ParamField>
+
+<ParamField path="device_id" type="string" optional>
+  Filter events by device ID
+</ParamField>
+
+<ParamField path="type" type="string" optional>
+  Filter events by type (e.g., "safety", "anomaly", "detection")
+</ParamField>
+
+<ParamField path="severity" type="string" optional>
+  Filter events by severity level (e.g., "low", "medium", "high", "critical")
+</ParamField>
+
+<ParamField path="limit" type="integer" optional>
+  Maximum number of events to return per page
+</ParamField>
+
+<ParamField path="cursor" type="string" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="list[FleetEvent]">
+  List of event objects
+  
+  <ResponseField name="uid" type="string">
+    Unique event identifier
+  </ResponseField>
+  
+  <ResponseField name="recording" type="string">
+    Recording ID this event belongs to
+  </ResponseField>
+  
+  <ResponseField name="device" type="string">
+    Device ID that created this event
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Event type category
+  </ResponseField>
+  
+  <ResponseField name="label" type="string">
+    Human-readable event label
+  </ResponseField>
+  
+  <ResponseField name="description" type="string">
+    Detailed event description
+  </ResponseField>
+  
+  <ResponseField name="timestamp" type="datetime">
+    When the event occurred
+  </ResponseField>
+  
+  <ResponseField name="duration_ms" type="integer">
+    Event duration in milliseconds
+  </ResponseField>
+  
+  <ResponseField name="severity" type="string">
+    Event severity level
+  </ResponseField>
+  
+  <ResponseField name="tags" type="list[string]">
+    Tags associated with the event
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="dict">
+    Custom metadata dictionary
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="datetime">
+    Event creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="datetime">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results are available
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for fetching the next page
+</ResponseField>
+
+---
+
+### create
+
+Create a new event for a recording.
+
+```python
+event = client.fleet.events.create(
+    recording="rec_abc123",
+    device="dev_xyz789",
+    label="Hard Braking Detected",
+    type="safety",
+    timestamp="2024-01-15T14:32:15Z",
+    severity="high",
+    description="Sudden deceleration detected at 45 mph to 15 mph",
+    duration_ms=2500,
+    tags=["automated", "safety-critical"],
+    metadata={
+        "initial_speed": 45,
+        "final_speed": 15,
+        "g_force": -0.8
+    }
+)
+```
+
+#### Parameters
+
+<ParamField path="recording" type="string" required>
+  ID of the recording this event belongs to
+</ParamField>
+
+<ParamField path="device" type="string" required>
+  ID of the device that generated this event
+</ParamField>
+
+<ParamField path="label" type="string" required>
+  Short, human-readable label for the event
+</ParamField>
+
+<ParamField path="type" type="string" required>
+  Event type category
+</ParamField>
+
+<ParamField path="timestamp" type="string" required>
+  ISO 8601 timestamp when the event occurred
+</ParamField>
+
+<ParamField path="severity" type="string" optional>
+  Severity level (e.g., "low", "medium", "high", "critical")
+</ParamField>
+
+<ParamField path="description" type="string" optional>
+  Detailed description of the event
+</ParamField>
+
+<ParamField path="duration_ms" type="integer" optional>
+  Duration of the event in milliseconds
+</ParamField>
+
+<ParamField path="tags" type="list[string]" optional>
+  Tags for categorizing the event
+</ParamField>
+
+<ParamField path="metadata" type="dict" optional>
+  Custom metadata as key-value pairs
+</ParamField>
+
+#### Returns
+
+Returns a `FleetEvent` object with all fields populated.
+
+---
+
+### create_batch
+
+Create multiple events in a single request for better performance.
+
+```python
+events = [
+    {
+        "recording": "rec_abc123",
+        "device": "dev_xyz789",
+        "label": "Object Detected",
+        "type": "detection",
+        "timestamp": "2024-01-15T14:30:00Z",
+        "severity": "low"
+    },
+    {
+        "recording": "rec_abc123",
+        "device": "dev_xyz789",
+        "label": "Lane Departure",
+        "type": "safety",
+        "timestamp": "2024-01-15T14:31:30Z",
+        "severity": "medium"
+    }
+]
+
+created_count = client.fleet.events.create_batch(events=events)
+print(f"Created {created_count} events")
+```
+
+#### Parameters
+
+<ParamField path="events" type="list[BatchEventParams]" required>
+  List of event parameter dictionaries. Each event must have:
+  - `recording` (string, required): Recording ID
+  - `device` (string, required): Device ID
+  - `label` (string, required): Event label
+  - `type` (string, required): Event type
+  - `timestamp` (string, required): ISO 8601 timestamp
+  - `severity` (string, optional): Severity level
+  - `description` (string, optional): Description
+  - `duration_ms` (integer, optional): Duration in milliseconds
+  - `tags` (list[string], optional): Tags
+  - `metadata` (dict, optional): Custom metadata
+</ParamField>
+
+#### Returns
+
+Returns an integer representing the number of events successfully created.
+
+---
+
+### get
+
+Retrieve details for a specific event.
+
+```python
+event = client.fleet.events.get("evt_def456")
+```
+
+#### Parameters
+
+<ParamField path="event_id" type="string" required>
+  The unique identifier of the event
+</ParamField>
+
+#### Returns
+
+Returns a `FleetEvent` object.
+
+---
+
+### delete
+
+Permanently delete an event.
+
+```python
+client.fleet.events.delete("evt_def456")
+```
+
+#### Parameters
+
+<ParamField path="event_id" type="string" required>
+  The unique identifier of the event to delete
+</ParamField>
+
+#### Returns
+
+Returns `None` on success.
+
+## Example Usage
+
+```python
+from avala import Avala
+
+client = Avala(api_key="your-api-key")
+
+# Create a single event
+event = client.fleet.events.create(
+    recording="rec_abc123",
+    device="dev_xyz789",
+    label="Obstacle Detected",
+    type="detection",
+    timestamp="2024-01-15T14:32:15Z",
+    severity="medium",
+    metadata={
+        "object_type": "pedestrian",
+        "distance_meters": 15.5,
+        "confidence": 0.95
+    }
+)
+
+print(f"Event created: {event.uid}")
+
+# Batch create multiple events
+events_to_create = [
+    {
+        "recording": "rec_abc123",
+        "device": "dev_xyz789",
+        "label": "Traffic Light - Red",
+        "type": "traffic_signal",
+        "timestamp": "2024-01-15T14:30:00Z"
+    },
+    {
+        "recording": "rec_abc123",
+        "device": "dev_xyz789",
+        "label": "Turn Signal Activated",
+        "type": "vehicle_action",
+        "timestamp": "2024-01-15T14:30:45Z"
+    }
+]
+
+created = client.fleet.events.create_batch(events=events_to_create)
+print(f"Batch created {created} events")
+
+# Query events by severity
+high_severity = client.fleet.events.list(
+    recording_id="rec_abc123",
+    severity="high"
+)
+
+for evt in high_severity.data:
+    print(f"{evt.label} at {evt.timestamp}: {evt.description}")
+
+# Get specific event
+event_detail = client.fleet.events.get(event.uid)
+print(f"Event type: {event_detail.type}")
+```
+
+## Async Usage
+
+```python
+from avala import AsyncAvala
+import asyncio
+
+async def process_events():
+    client = AsyncAvala(api_key="your-api-key")
+    
+    # Create event
+    event = await client.fleet.events.create(
+        recording="rec_abc123",
+        device="dev_xyz789",
+        label="Async Event",
+        type="test",
+        timestamp="2024-01-15T14:32:15Z"
+    )
+    
+    # List events
+    events = await client.fleet.events.list(type="safety")
+    
+    # Batch create
+    count = await client.fleet.events.create_batch(
+        events=[...]
+    )
+    
+asyncio.run(process_events())
+```
