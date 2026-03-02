@@ -1,0 +1,164 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Avala Python SDK",
+  "projectDescription": "Official Python SDK for the Avala API — build and manage ML annotation datasets, projects, exports, and tasks programmatically",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#2563EB",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/client",
+              "concepts/async-client",
+              "concepts/pagination",
+              "concepts/error-handling"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/datasets",
+              "guides/projects-and-tasks",
+              "guides/exports",
+              "guides/automation",
+              "guides/storage-integration",
+              "guides/webhooks"
+            ]
+          },
+          {
+            "group": "CLI Tool",
+            "pages": [
+              "cli/overview",
+              "cli/commands"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Client",
+            "pages": [
+              "api-reference/client",
+              "api-reference/async-client"
+            ]
+          },
+          {
+            "group": "Core Resources",
+            "pages": [
+              "api-reference/datasets",
+              "api-reference/projects",
+              "api-reference/tasks",
+              "api-reference/exports"
+            ]
+          },
+          {
+            "group": "Automation",
+            "pages": [
+              "api-reference/agents",
+              "api-reference/auto-label-jobs",
+              "api-reference/quality-targets",
+              "api-reference/consensus"
+            ]
+          },
+          {
+            "group": "Infrastructure",
+            "pages": [
+              "api-reference/storage-configs",
+              "api-reference/inference-providers",
+              "api-reference/webhooks",
+              "api-reference/organizations"
+            ]
+          },
+          {
+            "group": "Fleet Management",
+            "pages": [
+              "api-reference/fleet/overview",
+              "api-reference/fleet/devices",
+              "api-reference/fleet/events",
+              "api-reference/fleet/alerts",
+              "api-reference/fleet/rules",
+              "api-reference/fleet/recordings"
+            ]
+          },
+          {
+            "group": "Other",
+            "pages": [
+              "api-reference/slices",
+              "api-reference/annotation-issues",
+              "api-reference/errors"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Synchronous and asynchronous client support",
+    "Comprehensive ML annotation dataset management",
+    "Automation with agents and auto-labeling",
+    "Fleet management for edge devices",
+    "Cloud storage integration",
+    "Webhook subscriptions",
+    "Quality targets and consensus scoring",
+    "Built-in CLI tool",
+    "Cursor-based pagination",
+    "Type-safe Pydantic models"
+  ],
+  "publicApiSurface": [
+    "Client",
+    "AsyncClient",
+    "client.datasets.list()",
+    "client.datasets.get()",
+    "client.datasets.create()",
+    "client.projects.list()",
+    "client.projects.get()",
+    "client.tasks.list()",
+    "client.tasks.get()",
+    "client.exports.list()",
+    "client.exports.get()",
+    "client.exports.create()",
+    "client.agents.list()",
+    "client.agents.create()",
+    "client.agents.update()",
+    "client.agents.delete()",
+    "client.auto_label_jobs.list()",
+    "client.auto_label_jobs.create()",
+    "client.quality_targets.list()",
+    "client.quality_targets.create()",
+    "client.consensus.get_summary()",
+    "client.consensus.compute()",
+    "client.storage_configs.list()",
+    "client.storage_configs.create()",
+    "client.inference_providers.list()",
+    "client.inference_providers.create()",
+    "client.webhooks.list()",
+    "client.webhooks.create()",
+    "client.fleet.devices.list()",
+    "client.fleet.events.list()",
+    "client.fleet.alerts.list()",
+    "AvalaError",
+    "AuthenticationError",
+    "NotFoundError",
+    "RateLimitError",
+    "ValidationError",
+    "ServerError",
+    "CursorPage"
+  ]
+}
