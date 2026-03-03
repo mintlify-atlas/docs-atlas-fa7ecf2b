@@ -1,0 +1,201 @@
+---
+title: Signup
+description: Create new Avala accounts programmatically
+---
+
+The `signup` and `async_signup` functions allow you to create new Avala accounts programmatically without requiring an existing API key.
+
+## signup
+
+Create a new Avala account synchronously.
+
+```python
+from avala import signup
+
+response = signup(
+    email="user@example.com",
+    password="secure-password",
+    first_name="Jane",
+    last_name="Doe"
+)
+
+print(f"Account created: {response.user.email}")
+print(f"API key: {response.api_key}")
+```
+
+<ParamField path="email" type="str" required>
+  The user's email address
+</ParamField>
+
+<ParamField path="password" type="str" required>
+  The desired password for the account
+</ParamField>
+
+<ParamField path="first_name" type="str" optional>
+  User's first name
+</ParamField>
+
+<ParamField path="last_name" type="str" optional>
+  User's last name
+</ParamField>
+
+<ParamField path="base_url" type="str" optional>
+  Override the API base URL. Defaults to `https://api.avala.ai/api/v1` or the `AVALA_BASE_URL` environment variable
+</ParamField>
+
+<ParamField path="timeout" type="float" optional>
+  Request timeout in seconds (default: 30.0)
+</ParamField>
+
+### Response
+
+Returns a `SignupResponse` object with the following fields:
+
+<ResponseField name="user" type="User">
+  The created user object
+</ResponseField>
+
+<ResponseField name="user.uid" type="str">
+  Unique identifier for the user
+</ResponseField>
+
+<ResponseField name="user.email" type="str">
+  User's email address
+</ResponseField>
+
+<ResponseField name="user.first_name" type="str">
+  User's first name
+</ResponseField>
+
+<ResponseField name="user.last_name" type="str">
+  User's last name
+</ResponseField>
+
+<ResponseField name="api_key" type="str">
+  The API key for the newly created account
+</ResponseField>
+
+### Example
+
+```python
+from avala import signup, Client
+
+# Create a new account
+response = signup(
+    email="newuser@example.com",
+    password="MySecurePassword123!",
+    first_name="John",
+    last_name="Smith"
+)
+
+# Use the returned API key to create a client
+client = Client(api_key=response.api_key)
+
+# Now you can use the client
+datasets = client.datasets.list()
+print(f"User {response.user.email} has {len(datasets.items)} datasets")
+```
+
+## async_signup
+
+Asynchronous version of the `signup` function.
+
+```python
+from avala import async_signup
+
+async def create_account():
+    response = await async_signup(
+        email="user@example.com",
+        password="secure-password",
+        first_name="Jane",
+        last_name="Doe"
+    )
+    return response
+
+# In an async context
+response = await create_account()
+print(f"API key: {response.api_key}")
+```
+
+<ParamField path="email" type="str" required>
+  The user's email address
+</ParamField>
+
+<ParamField path="password" type="str" required>
+  The desired password for the account
+</ParamField>
+
+<ParamField path="first_name" type="str" optional>
+  User's first name
+</ParamField>
+
+<ParamField path="last_name" type="str" optional>
+  User's last name
+</ParamField>
+
+<ParamField path="base_url" type="str" optional>
+  Override the API base URL
+</ParamField>
+
+<ParamField path="timeout" type="float" optional>
+  Request timeout in seconds (default: 30.0)
+</ParamField>
+
+### Response
+
+Returns a `SignupResponse` object with the same structure as the synchronous version.
+
+### Example with AsyncClient
+
+```python
+from avala import async_signup, AsyncClient
+
+async def setup_new_user():
+    # Create account
+    response = await async_signup(
+        email="asyncuser@example.com",
+        password="SecurePass456!",
+        first_name="Alice",
+        last_name="Johnson"
+    )
+    
+    # Use the API key with AsyncClient
+    async with AsyncClient(api_key=response.api_key) as client:
+        datasets = await client.datasets.list()
+        print(f"Account created with {len(datasets.items)} datasets")
+    
+    return response
+
+import asyncio
+asyncio.run(setup_new_user())
+```
+
+## Error handling
+
+Both functions raise the same error types as the client:
+
+```python
+from avala import signup
+from avala.errors import ValidationError, AvalaError
+
+try:
+    response = signup(
+        email="invalid-email",
+        password="short"
+    )
+except ValidationError as e:
+    print(f"Validation error: {e.message}")
+    if e.details:
+        for detail in e.details:
+            print(f"  - {detail}")
+except AvalaError as e:
+    print(f"API error: {e.message}")
+```
+
+<Note>
+These functions do not require an existing API key, making them ideal for automated account creation workflows.
+</Note>
+
+<Warning>
+Store the returned API key securely. It will only be returned once during account creation.
+</Warning>

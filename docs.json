@@ -114,7 +114,8 @@
             "pages": [
               "api-reference/slices",
               "api-reference/annotation-issues",
-              "api-reference/errors"
+              "api-reference/errors",
+              "api-reference/signup"
             ]
           }
         ]

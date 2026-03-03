@@ -191,3 +191,121 @@ client.webhooks.test("wh_abc123")
 <ResponseField name="message" type="str">
   Test result message or error details
 </ResponseField>
+
+## Webhook Deliveries
+
+The `client.webhook_deliveries` resource allows you to inspect webhook delivery attempts and their results.
+
+### list
+
+List webhook delivery attempts.
+
+```python
+client.webhook_deliveries.list(
+    limit=20,
+    cursor="abc123"
+)
+```
+
+<ParamField path="limit" type="int" optional>
+  Maximum number of items to return per page
+</ParamField>
+
+<ParamField path="cursor" type="str" optional>
+  Pagination cursor for fetching the next page
+</ParamField>
+
+<ResponseField name="data" type="List[WebhookDelivery]">
+  List of webhook delivery objects
+</ResponseField>
+
+<ResponseField name="next_cursor" type="str | None">
+  Cursor for the next page, or None if no more results
+</ResponseField>
+
+### get
+
+Retrieve details about a specific webhook delivery.
+
+```python
+client.webhook_deliveries.get("delivery_abc123")
+```
+
+<ParamField path="uid" type="str" required>
+  Unique identifier of the webhook delivery
+</ParamField>
+
+<ResponseField name="uid" type="str">
+  Unique identifier for the delivery
+</ResponseField>
+
+<ResponseField name="webhook_uid" type="str">
+  UID of the webhook that was triggered
+</ResponseField>
+
+<ResponseField name="event_type" type="str">
+  The type of event that triggered this delivery
+</ResponseField>
+
+<ResponseField name="status" type="str">
+  Delivery status: "pending", "success", "failed"
+</ResponseField>
+
+<ResponseField name="status_code" type="int">
+  HTTP status code returned by the webhook endpoint
+</ResponseField>
+
+<ResponseField name="response_time_ms" type="float">
+  Response time in milliseconds
+</ResponseField>
+
+<ResponseField name="attempts" type="int">
+  Number of delivery attempts made
+</ResponseField>
+
+<ResponseField name="created_at" type="str">
+  Timestamp when the delivery was created
+</ResponseField>
+
+<ResponseField name="completed_at" type="str">
+  Timestamp when the delivery was completed (success or final failure)
+</ResponseField>
+
+### Example: Monitor webhook deliveries
+
+```python
+# List recent webhook deliveries
+deliveries = client.webhook_deliveries.list(limit=10)
+
+for delivery in deliveries:
+    print(f"Event: {delivery.event_type}")
+    print(f"Status: {delivery.status}")
+    print(f"Attempts: {delivery.attempts}")
+    
+    if delivery.status == "failed":
+        # Get full details for failed deliveries
+        details = client.webhook_deliveries.get(delivery.uid)
+        print(f"Status code: {details.status_code}")
+        print(f"Response time: {details.response_time_ms}ms")
+```
+
+## Async Methods
+
+All methods are available in async form through `AsyncClient`:
+
+```python
+# Webhooks
+await client.webhooks.list()
+await client.webhooks.get("wh_abc123")
+await client.webhooks.create(
+    target_url="https://example.com/webhook",
+    events=["dataset.created"]
+)
+await client.webhooks.update("wh_abc123", is_active=False)
+await client.webhooks.delete("wh_abc123")
+await client.webhooks.test("wh_abc123")
+
+# Webhook Deliveries
+await client.webhook_deliveries.list()
+await client.webhook_deliveries.get("delivery_abc123")
+```
